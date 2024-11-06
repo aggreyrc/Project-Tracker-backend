@@ -4,7 +4,7 @@ load_dotenv()
 from flask import Flask,request, make_response, session
 from flask_migrate import Migrate
 from flask_restful import Api, Resource
-from models import db, User, Projects, Cohort, Project_members, bcrypt
+from models import db, User, Project, Cohort, ProjectMember, bcrypt
 from flask_cors import CORS
 
 
@@ -20,8 +20,9 @@ CORS(app)
 
 migrate = Migrate(app, db)
 db.init_app(app)
+bcrypt.init_app(app)
 
-bcrypt=Bcrpt(app)
+api = Api(app)
 
 # Home page....................................................................
 class Home(Resource):
@@ -148,7 +149,14 @@ def post(self):
         make_response({"errors":["validation errors"]}),403
 
 
-
+# Project
+# class Projects(Resource):
+    
+#     def get(self):
+#         project_list = []
+#         for project in Project.query.all():
+            
+            
 
 if __name__ == '__main__':
     app.run(port=5555, debug=True)

@@ -1,8 +1,10 @@
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 from sqlalchemy.exc import IntegrityError
+from flask_bcrypt import Bcrypt
 
 db = SQLAlchemy()
+bcrypt = Bcrypt()
 
 # User Model for Authentication
 class User(db.Model):
