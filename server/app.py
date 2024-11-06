@@ -197,6 +197,8 @@ api.add_resource(UserByID, '/user/<int:id>')
 
 # CRUD FOR PROJECT MODEL
 class Projects(Resource):
+    
+    # Fetching all projects
     def get(self):
         projects = Project.query.all()
         projects_list = []
@@ -210,6 +212,27 @@ class Projects(Resource):
             }
         projects_list.append(project_dict)
         return make_response(projects_list,200)
+    
+    # Creating a project
+    def post(self):
+        try:
+            data = request.get_json()
+            new_project = Project(
+                name=data['name'],
+                description=data['description'],
+                github_url=data['github_url'],
+                type = data['type'],
+                track = data['track'],
+                cohort_id = data['cohort_id'],
+                created_at=data['created_at'],
+            )
+            db.session.add(new_project)
+            db.session.commit()
+            return make_response(new_project.to_dict(), 200)
+        except:
+            return make_response({"error": "Invalid data"}, 400)
+        
+                
     
 api.add_resource(Projects, '/projects')
 
