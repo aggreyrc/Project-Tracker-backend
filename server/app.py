@@ -210,6 +210,8 @@ class Projects(Resource):
             }
         projects_list.append(project_dict)
         return make_response(projects_list,200)
+    
+api.add_resource(Projects, '/projects')
 
 if __name__ == '__main__':
     app.run(port=5555, debug=True)
