@@ -191,7 +191,25 @@ class UserByID(Resource):
 
         return make_response(response_dict,200)
         
-api.add_resource(UserByID, '/user/<int:id>')    
+api.add_resource(UserByID, '/user/<int:id>')  
+
+
+
+# CRUD FOR PROJECT MODEL
+class Projects(Resource):
+    def get(self):
+        projects = Project.query.all()
+        projects_list = []
+        for project in projects:
+            project_dict = {
+                "id":project.id,
+                "title":project.title,
+                "description":project.description,
+                "github_url": project.github_url,
+                "created_at": project.created_at
+            }
+        projects_list.append(project_dict)
+        return make_response(projects_list,200)
 
 if __name__ == '__main__':
     app.run(port=5555, debug=True)

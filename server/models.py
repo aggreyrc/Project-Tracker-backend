@@ -1,12 +1,12 @@
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 from sqlalchemy.exc import IntegrityError
+from config import db,bcrypt
 
-db = SQLAlchemy()
 
 # User Model for Authentication
 class User(db.Model):
-    _tablename_ = 'users'
+    __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
@@ -54,29 +54,29 @@ class User(db.Model):
 
 
 # Cohort Model
-class Cohort(db.Model):
-    _tablename_ = 'cohorts'
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(50), unique=True, nullable=False)
-    track = db.Column(db.String(50), nullable=False)
-    start_date = db.Column(db.Date, nullable=False)
-    end_date = db.Column(db.Date, nullable=False)
+# class Cohort(db.Model):
+#     __tablename__ = 'cohorts'
+#     id = db.Column(db.Integer, primary_key=True)
+#     name = db.Column(db.String(50), unique=True, nullable=False)
+#     track = db.Column(db.String(50), nullable=False)
+#     start_date = db.Column(db.Date, nullable=False)
+#     end_date = db.Column(db.Date, nullable=False)
 
-    # Relationships
-    projects = db.relationship('Project', backref='cohort', lazy=True, cascade="all, delete-orphan")
+#     # Relationships
+#     projects = db.relationship('Project', backref='cohort', lazy=True, cascade="all, delete-orphan")
 
-    def _repr_(self):
-        return f"<Cohort {self.name} (Track: {self.track})>"
+#     def _repr_(self):
+#         return f"<Cohort {self.name} (Track: {self.track})>"
 
-    def validate(self):
-        if len(self.name) < 3:
-            raise ValueError("Cohort name must be at least 3 characters long.")
-        if self.start_date >= self.end_date:
-            raise ValueError("Start date must be before end date.")
+#     def validate(self):
+#         if len(self.name) < 3:
+#             raise ValueError("Cohort name must be at least 3 characters long.")
+#         if self.start_date >= self.end_date:
+#             raise ValueError("Start date must be before end date.")
 
 # Project Model
 class Project(db.Model):
-    _tablename_ = 'projects'
+    __tablename__ = 'projects'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text, nullable=False)
@@ -105,6 +105,8 @@ class Cohort(db.Model):
     __tablename__ = 'cohorts'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), unique=True, nullable=False)
+    description = db.Column(db.String(50), nullable=False)
+    github_url = db.Column(db.String(50), nullable=False)
     type = db.Column(db.String(50), nullable=False)  # Changed from 'track' to 'type'
     start_date = db.Column(db.Date, nullable=False)
     end_date = db.Column(db.Date, nullable=False)
@@ -136,7 +138,7 @@ class Cohort(db.Model):
 
 # ProjectMember Model - Join table for Many-to-Many relationship between Projects and Users
 class ProjectMember(db.Model):
-    _tablename_ = 'project_members'
+    __tablename__ = 'project_members'
     id = db.Column(db.Integer, primary_key=True)
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id', ondelete='CASCADE'), nullable=False)
     cohort_id = db.Column(db.Integer, db.ForeignKey('cohorts.id', ondelete='CASCADE'), nullable=False)
