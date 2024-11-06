@@ -7,26 +7,12 @@ db = SQLAlchemy()
 class User(db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
+    username = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
-    role = db.Column(db.String(20), nullable=False)  # 'student' or 'admin'
-    cohort = db.Column(db.String(50))
+    is_admin = db.Column(db.Boolean, default=False)  # Boolean: True for admin, False for student
+    
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-    # Relationships
-    owned_projects = db.relationship(
-        'Project',
-        backref='owner',
-        lazy=True,
-        cascade="all, delete" if role == "admin" else "save-update"  # Cascade delete only if user is admin
-    )
-    memberships = db.relationship(
-        'ProjectMember',
-        backref='user',
-        lazy=True,
-        cascade="all, delete-orphan"
-    )
 
     def can_add_project(self):
         """Check if the user can add a project."""
@@ -34,6 +20,18 @@ class User(db.Model):
 
     def can_delete_project(self):
         """Check if the user can delete a project."""
+        return self.role == 'admin'
+
+    def can_edit_project(self):
+        """Check if the user can edit a project."""
+        return self.role == 'admin'
+
+    def can_delete_project_member(self):
+        """Check if the user can delete a project member."""
+        return self.role == 'admin'
+
+    def can_delete_cohort(self):
+        """Check if the user can delete a cohort."""
         return self.role == 'admin'
 
     def __repr__(self):
@@ -48,7 +46,6 @@ class Project(db.Model):
     github_url = db.Column(db.String(200), nullable=False)
     track = db.Column(db.String(50), nullable=False)
     cohort = db.Column(db.String(50), nullable=False)
-    owner_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     # Relationships
@@ -56,11 +53,17 @@ class Project(db.Model):
         'ProjectMember',
         backref='project',
         lazy=True,
-        cascade="all, delete-orphan"
+        cascade="all, delete-orphan"  # Delete project members when a project is deleted
+    )
+    cohorts = db.relationship(
+        'Cohort',
+        backref='project',
+        lazy=True,
+        cascade="all, delete"  # Delete cohorts when a project is deleted
     )
 
     def __repr__(self):
-        return f"<Project {self.name} (Owner ID: {self.owner_id})>"
+        return f"<Project {self.name} (Cohort: {self.cohort})>"
 
 # Cohort Model
 class Cohort(db.Model):
@@ -70,6 +73,7 @@ class Cohort(db.Model):
     track = db.Column(db.String(50), nullable=False)
     start_date = db.Column(db.Date, nullable=False)
     end_date = db.Column(db.Date, nullable=False)
+    project_id = db.Column(db.Integer, db.ForeignKey('projects.id', ondelete='CASCADE'), nullable=False)
 
     def __repr__(self):
         return f"<Cohort {self.name} (Track: {self.track})>"
