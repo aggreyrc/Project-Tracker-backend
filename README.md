@@ -59,3 +59,5 @@ role (string): Role of the member in the project (e.g., Developer, Lead, Reviewe
 Prerequisites
 Python 3.10+
 Flask and Flask-SQLAlchemy
+=======
+LINK TO BE DBDIAGRAM https://dbdiagram.io/d/672a25ece9daa85aca644e56
