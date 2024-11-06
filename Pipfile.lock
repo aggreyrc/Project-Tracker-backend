@@ -6,6 +6,11 @@
         "pipfile-spec": 6,
         "requires": {
             "python_version": "3.12"
+            "sha256": "7f7606f08e0544d8d012ef4d097dabdd6df6843a28793eb6551245d4b2db4242"
+        },
+        "pipfile-spec": 6,
+        "requires": {
+            "python_version": "3.8"
         },
         "sources": [
             {
@@ -404,5 +409,6 @@
             "version": "==3.1.2"
         }
     },
+    "default": {},
     "develop": {}
 }
