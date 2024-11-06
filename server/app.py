@@ -2,7 +2,7 @@
 
 from flask import request, make_response, session
 from flask_restful import Resource
-from models import User, Projects, Cohort, Project_members, bcrypt
+from models import User, Project, Cohort, ProjectMember
 from config import app,api,db
 
 
@@ -96,42 +96,100 @@ api.add_resource(Logout,'/logout', endpoint='logout')
 #User
 class Users(Resource):
 
-    
+    # fetching all the users
     def get(self):
 
         users_list=[]
         for user in User.query.all():
             user_dict = {
-                "name":user.name,
+                "username":user.username,
                 "email":user.email,
-                "role":user.role,
+                "is_admin":user.is_admin,
             }
             users_list.append(user_dict)
 
         return make_response(users_list,200)
     
+    # Adding new users
+    def post(self):
 
-def post(self):
+        try:
+            data =  request.get_json()
 
-    try:
-        data =  request.get_json()
+            new_user = User(
+                username = data['username'],
+                email = data['email'],
+                is_admin = data.get('is_admin',False),
+            )
 
-        new_user = User(
-            name = data['name'],
-            email = data['email'],
-            role = data['role'],
-        )
+            db.session.add(new_user)
+            db.session.commit()
 
-        db.session.add(new_user)
+            return make_response(new_user.to_dict(),201)
+    
+        except:
+            return make_response({"errors":["validation errors"]}),403
+
+api.add_resource(Users, '/users')
+
+class UserByID(Resource):
+
+    # Fetching a user by id
+    def get(self,id):
+        user = User.query.filter(User.id == id).first()
+
+        if user:
+            return make_response(user.to_dict(),200)
+        return make_response({"error":"User not found"},404)
+
+    # Updating a user using the user's id
+    def patch(self,id):
+        
+        user = User.query.filter(User.id == id).first()
+
+        data = request.get_json()
+
+        if user:
+            
+            try:
+                for attr in data:
+                    setattr(user, attr, data[attr])
+
+                    db.session.add(user)
+                    db.session.commit()
+
+                    user_dict = {
+                        "username":user.username,
+                        "email":user.email,
+                        "password":user.password,
+                    }
+
+                    response = make_response(user_dict,200)
+
+                    return response
+                
+            except ValueError:
+                return make_response({"errors": ["validation errors"]},400)
+        
+        return make_response({"error": "User not found"},404)
+
+
+    # Deleting a user by their ID
+    def delete(self,id):
+
+        user =  User.query.filter(User.id == id).first()
+
+        if not user:
+            return make_response({"error":"User not found"},404)
+
+        db.session.delete(user)
         db.session.commit()
 
-        return make_response(new_user.to_dict(),201)
-    
-    except:
-        make_response({"errors":["validation errors"]}),403
+        response_dict = {"Message": "User successfully deleted"}
 
-
-
+        return make_response(response_dict,200)
+        
+api.add_resource(UserByID, '/user/<int:id>')    
 
 if __name__ == '__main__':
     app.run(port=5555, debug=True)
