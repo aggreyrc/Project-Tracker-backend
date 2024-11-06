@@ -1,27 +1,10 @@
-from dotenv import load_dotenv
-load_dotenv()
+#!/usr/bin/env python3
 
-from flask import Flask,request, make_response, session
-from flask_migrate import Migrate
-from flask_restful import Api, Resource
-from models import db, User, Projects, Cohort, Project_members, bcrypt
-from flask_cors import CORS
+from flask import request, make_response, session
+from flask_restful import Resource
+from models import User, Projects, Cohort, Project_members, bcrypt
+from config import app,api,db
 
-
-app = Flask(__name__)
-import os
-
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///app.db')
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SECRET_KEY'] = 'your_secret_key'
-app.json.compact = False
-
-CORS(app)
-
-migrate = Migrate(app, db)
-db.init_app(app)
-
-bcrypt=Bcrpt(app)
 
 # Home page....................................................................
 class Home(Resource):
@@ -108,7 +91,7 @@ api.add_resource(Logout,'/logout', endpoint='logout')
 
 # ..............................................................................
 
-# C.R.U.D
+# C.R.U.D actions for each model
 
 #User
 class Users(Resource):
