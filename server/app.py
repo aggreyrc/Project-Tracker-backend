@@ -142,7 +142,7 @@ class UserByID(Resource):
             return make_response(user.to_dict(),200)
         return make_response({"error":"User not found"},404)
 
-    # Updating a user using the user's id
+    # Updating a user using their id
     def patch(self,id):
         
         user = User.query.filter(User.id == id).first()
@@ -162,6 +162,7 @@ class UserByID(Resource):
                         "username":user.username,
                         "email":user.email,
                         "password":user.password,
+                        "is_admin":user.is_admin,
                     }
 
                     response = make_response(user_dict,200)
@@ -171,6 +172,7 @@ class UserByID(Resource):
             except ValueError:
                 return make_response({"errors": ["validation errors"]},400)
         
+        # error response when the user is not found
         return make_response({"error": "User not found"},404)
 
 
