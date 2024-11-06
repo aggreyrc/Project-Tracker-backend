@@ -53,27 +53,6 @@ class User(db.Model):
         self.validate_email(self.email)
 
 
-# Cohort Model
-# class Cohort(db.Model):
-#     __tablename__ = 'cohorts'
-#     id = db.Column(db.Integer, primary_key=True)
-#     name = db.Column(db.String(50), unique=True, nullable=False)
-#     track = db.Column(db.String(50), nullable=False)
-#     start_date = db.Column(db.Date, nullable=False)
-#     end_date = db.Column(db.Date, nullable=False)
-
-#     # Relationships
-#     projects = db.relationship('Project', backref='cohort', lazy=True, cascade="all, delete-orphan")
-
-#     def _repr_(self):
-#         return f"<Cohort {self.name} (Track: {self.track})>"
-
-#     def validate(self):
-#         if len(self.name) < 3:
-#             raise ValueError("Cohort name must be at least 3 characters long.")
-#         if self.start_date >= self.end_date:
-#             raise ValueError("Start date must be before end date.")
-
 # Project Model
 class Project(db.Model):
     __tablename__ = 'projects'
