@@ -196,6 +196,7 @@ api.add_resource(UserByID, '/user/<int:id>')
 
 
 # CRUD FOR PROJECT MODEL
+
 class Projects(Resource):
     
     # Fetching all projects
@@ -235,6 +236,49 @@ class Projects(Resource):
                 
     
 api.add_resource(Projects, '/projects')
+
+class ProjectById(Resource):
+    
+    # Fetching a project by id
+    def get(self, id):
+        project = Project.query.filter_by(id=id).first()
+        if project:
+            return make_response(project.to_dict(), 200)
+        else:
+            return make_response({"error": "Project not found"}, 404)
+        
+    # Deleting a project
+    def delete(self, id):
+        project = Project.query.filter_by(id=id).first()
+        if project:
+            db.session.delete(project)
+            db.session.commit()
+            return make_response({"Message": "Project Deleted Successfully"}, 200)
+        else:
+            return make_response({"error": "Project not found"}, 404)
+        
+    # Updating a project
+    def patch(self, id):
+        project = Project.query.filter_by(id=id).first()
+        
+        data = request.get_json()
+        
+        if project:
+            try:
+                for attr in data:
+                    setattr(project, attr, data[attr])
+                    
+                    db.session.add(project)
+                    db.session.commit()
+                    
+                    return make_response(project.to_dict(), 200)
+            except ValueError:
+                return make_response({"errors": ["validation errors"]}, 400)
+        else:
+            return make_response({"error": "Project not found"}, 404)
+
+api.add_resource(ProjectById, '/projects/<int:id>')
+            
 
 if __name__ == '__main__':
     app.run(port=5555, debug=True)

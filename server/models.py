@@ -102,7 +102,7 @@ class Cohort(db.Model):
         return f"<Cohort {self.name} (Type: {self.type})>"
 
 # ProjectMember Model - Association between Projects and Cohorts
-    members = db.relationship('ProjectMember', backref='project', lazy=True, cascade="all, delete-orphan")
+    # members = db.relationship('ProjectMember', backref='project', lazy=True, cascade="all, delete-orphan")
 
     def _repr_(self):
         return f"<Project {self.name} (Cohort ID: {self.cohort_id})>"
@@ -123,6 +123,8 @@ class ProjectMember(db.Model):
     cohort_id = db.Column(db.Integer, db.ForeignKey('cohorts.id', ondelete='CASCADE'), nullable=False)
     joined_at = db.Column(db.DateTime, default=datetime.utcnow)
     role = db.Column(db.String(50))  # e.g., 'Developer', 'Lead', 'Reviewer'
+    
+    project = db.relationship('Project', backref='project_members', lazy=True)
 
     def __repr__(self):
         return f"<ProjectMember (Project ID: {self.project_id}, Cohort ID: {self.cohort_id}, Role: {self.role})>"
