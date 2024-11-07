@@ -1,9 +1,31 @@
 #!/usr/bin/env python3
 
-from flask import request, make_response, session
-from flask_restful import Resource
+from flask import request, make_response, session, Flask
+from flask_migrate import Migrate
+from flask_restful import Resource,Api
 from models import User, Project, Cohort, ProjectMember
-from config import app,api,db
+from flask_sqlalchemy import SQLAlchemy
+from flask_bcrypt import Bcrypt
+from flask_cors import CORS
+
+import os
+
+app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///app.db') 
+ # ☝️ Takes care of both Postgres and sqlite databases
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SECRET_KEY'] = b'|\xab_\xac<\xcb\xe2\xc8~\x110\x82\xeb\xfa\xc8~'
+app.json.compact = False
+
+
+db = SQLAlchemy()
+api = Api(app)
+CORS(app)
+
+migrate = Migrate(app, db)
+db.init_app(app)
+
+bcrypt = Bcrypt(app)
 
 
 # Home page....................................................................
@@ -105,20 +127,25 @@ class Users(Resource):
             # Limit maximum users per page
             per_page = min(per_page,100)
 
-            # sorting the users in asccending order
+            # sorting the users in ascending order
             users_query = User.query.order_by(User.id.asc())
 
+            # calculates the number of user records in the database
             total_users = users_query.count()
-            users_paginated = User.query.paginated(page=page, per_page=per_page)
+
+            # fetches users with pagination
+            users_paginated = User.query.paginate(page=page, per_page=per_page)
 
             users_list = []
-            for user in users_paginated.item:
+            for user in users_paginated.items:
                 user_dict = {
                     "username":user.username,
                     "email":user.email,
                     "is_admin":user.is_admin,
                 }
                 users_list.append(user_dict)
+
+
 
             pagination_metadata = {
                 "total":total_users,
@@ -160,6 +187,7 @@ class Users(Resource):
             return make_response({"errors":["validation errors"]}),403
 
 api.add_resource(Users, '/users')
+
 
 # User by ID
 class UserByID(Resource):

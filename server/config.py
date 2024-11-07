@@ -1,7 +1,4 @@
-# Config.py configures the database
-
-from dotenv import load_dotenv
-load_dotenv()
+#!/usr/bin/env python3
 
 from flask import Flask
 from flask_migrate import Migrate
