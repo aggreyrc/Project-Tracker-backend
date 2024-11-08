@@ -1,81 +1,117 @@
-from faker import Faker
-from models import db, User, Project, Cohort, ProjectMember
-from app import app
-import random
+from config import db, bcrypt, app  # Import the app from your config file
+from models import User, Project, Cohort, ProjectMember
+from datetime import datetime, timedelta
 
-# Initialize Faker instance for generating random data
-fake = Faker()
 
-# Constants defining the number of records to create for each model
-NUM_USERS = 10
-NUM_PROJECTS = 40 
-NUM_COHORTS = 3
-NUM_PROJECT_MEMBERS = 15
+def seed_data():
+    # Creating the application context
+    with app.app_context():
+        # Clear existing data
+        db.drop_all()
+        db.create_all()
 
-# Clear existing data and create fresh tables
-with app.app_context():
-    # Drop all existing tables and recreate them
-    db.drop_all()
-    db.create_all()
-
-    
-    # Seed Cohorts
- 
-    cohorts = []  # List to keep track of created cohort instances
-    for _ in range(NUM_COHORTS):
-        cohort = Cohort(
-            name=f"{fake.word().capitalize()} Cohort",  # Random cohort name
-            track=fake.random_element(elements=["Web", "Data Science", "DevOps"]),  # Random track
-            start_date=fake.date_this_decade(),  # Random start date
-            end_date=fake.date_this_decade()     # Random end date
+        # Creating sample users
+        admin_user = User(
+            username="Isaac Odhiambo",
+            email="odhiamboisaac@gmail.com",
+            password=bcrypt.generate_password_hash("admin123").decode('utf-8'),
+            is_admin=True,
+            is_verified=True  # Set as verified for admin access
         )
-        db.session.add(cohort)  # Add cohort to the session
-        cohorts.append(cohort)  # Append cohort to list for later reference
-    db.session.commit()  # Commit all cohort records to the database
 
-  
-    # Seed Users
-   
-    users = []  # List to keep track of created user instances
-    for _ in range(NUM_USERS):
-        user = User(
-            name=fake.name(),  # Random user name
-            email=fake.unique.email(),  # Unique random email
-            password=fake.password(length=10),  # Random password with specified length
-            role=fake.random_element(elements=["student", "admin"]),  # Random role, either student or admin
-            cohort=random.choice(cohorts).name  # Assign user to a random cohort
+        student_user = User(
+            username="Odiwuor Jakababa",
+            email="odiwuorisaach@gmail.com",
+            password=bcrypt.generate_password_hash("student123").decode('utf-8'),
+            is_admin=False,
+            is_verified=True  # Set as verified for normal student
         )
-        db.session.add(user)  # Add user to the session
-        users.append(user)  # Append user to list for later reference
-    db.session.commit()  # Commit all user records to the database
 
-    # Seed Projects
-  
-    projects = []  # List to keep track of created project instances
-    for _ in range(NUM_PROJECTS):
-        project = Project(
-            name=f"{fake.word().capitalize()} Project",  # Random project name
-            description=fake.paragraph(),  # Random description
-            github_url=f"https://github.com/{fake.user_name()}/{fake.word()}",  # Random GitHub URL
-            track=fake.random_element(elements=["Web", "Data Science", "DevOps"]),  # Random track
-            cohort=random.choice(cohorts).name,  # Assign project to a random cohort
-            owner_id=random.choice(users).id  # Randomly select an owner from created users
+        # Adding users to the session
+        db.session.add(admin_user)
+        db.session.add(student_user)
+        db.session.commit()
+
+        # Creating sample cohorts
+        cohort1 = Cohort(
+            name="Cohort 2024",
+            description="This is the 2024 cohort.",
+            github_url="https://github.com/example/cohort2024",
+            type="Full Stack Development",
+            start_date=datetime(2024, 1, 1),
+            end_date=datetime(2024, 12, 31)
         )
-        db.session.add(project)  # Add project to the session
-        projects.append(project)  # Append project to list for later reference
-    db.session.commit()  # Commit all project records to the database
 
-    
-    # Seed Project Members
-
-    for _ in range(NUM_PROJECT_MEMBERS):
-        project_member = ProjectMember(
-            project_id=random.choice(projects).id,  # Randomly assign a project
-            user_id=random.choice(users).id,  # Randomly assign a user
-            role=fake.random_element(elements=["Developer", "Lead", "Reviewer"]),  # Random role
-            joined_at=fake.date_this_year()  # Random join date within the current year
+        cohort2 = Cohort(
+            name="Cohort 2025",
+            description="This is the 2025 cohort.",
+            github_url="https://github.com/example/cohort2025",
+            type="Data Science",
+            start_date=datetime(2025, 1, 1),
+            end_date=datetime(2025, 12, 31)
         )
-        db.session.add(project_member)  # Add project member to the session
-    db.session.commit()  # Commit all project member records to the database
 
-print("Group 5, seeding complete!")
+        # Adding cohorts to the session
+        db.session.add(cohort1)
+        db.session.add(cohort2)
+        db.session.commit()
+
+        # Creating sample projects with image URLs
+        project1 = Project(
+            name="Project Alpha",
+            description="This is the Alpha project for cohort 2024.",
+            github_url="https://github.com/example/projectalpha",
+            type="Web Development",
+            cohort_id=cohort1.id,
+            created_at=datetime.utcnow(),
+            image_url="https://example.com/images/project_alpha.png"
+        )
+
+        project2 = Project(
+            name="Project Beta",
+            description="This is the Beta project for cohort 2025.",
+            github_url="https://github.com/example/projectbeta",
+            type="Machine Learning",
+            cohort_id=cohort2.id,
+            created_at=datetime.utcnow(),
+            image_url="https://example.com/images/project_beta.png"
+        )
+
+        # Adding projects to the session
+        db.session.add(project1)
+        db.session.add(project2)
+        db.session.commit()
+
+        # Creating sample project members
+        project_member1 = ProjectMember(
+            project_id=project1.id,
+            user_id=admin_user.id,  # Assuming admin is part of this project
+            role="Team Lead",
+            joined_at=datetime.utcnow()
+        )
+
+        project_member2 = ProjectMember(
+            project_id=project1.id,
+            user_id=student_user.id,
+            role="Developer",
+            joined_at=datetime.utcnow()
+        )
+
+        project_member3 = ProjectMember(
+            project_id=project2.id,
+            user_id=student_user.id,
+            role="Data Scientist",
+            joined_at=datetime.utcnow() + timedelta(days=1)
+        )
+
+        # Adding project members to the session
+        db.session.add(project_member1)
+        db.session.add(project_member2)
+        db.session.add(project_member3)
+        db.session.commit()
+
+        print("Seeding completed successfully!")
+
+
+if __name__ == "__main__":
+    seed_data()

@@ -1,8 +1,8 @@
-"""Creating tables
+"""Initial migration
 
-Revision ID: a80f76f9f3ef
+Revision ID: 8b81673b181c
 Revises: 
-Create Date: 2024-11-07 00:54:36.153493
+Create Date: 2024-11-07 18:54:02.931721
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'a80f76f9f3ef'
+revision = '8b81673b181c'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -35,8 +35,9 @@ def upgrade():
     sa.Column('email', sa.String(length=120), nullable=False),
     sa.Column('password', sa.String(length=200), nullable=False),
     sa.Column('is_admin', sa.Boolean(), nullable=True),
+    sa.Column('is_verified', sa.Boolean(), nullable=True),
+    sa.Column('verification_code', sa.String(length=6), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=True),
-    sa.Column('role', sa.String(length=20), nullable=False),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('email')
     )
@@ -46,7 +47,6 @@ def upgrade():
     sa.Column('description', sa.Text(), nullable=False),
     sa.Column('github_url', sa.String(length=200), nullable=False),
     sa.Column('type', sa.String(length=50), nullable=False),
-    sa.Column('track', sa.String(length=50), nullable=False),
     sa.Column('cohort_id', sa.Integer(), nullable=False),
     sa.Column('created_at', sa.DateTime(), nullable=True),
     sa.ForeignKeyConstraint(['cohort_id'], ['cohorts.id'], ondelete='CASCADE'),
@@ -55,10 +55,9 @@ def upgrade():
     op.create_table('project_members',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('project_id', sa.Integer(), nullable=False),
-    sa.Column('cohort_id', sa.Integer(), nullable=False),
+    sa.Column('user_id', sa.Integer(), nullable=False),
     sa.Column('joined_at', sa.DateTime(), nullable=True),
     sa.Column('role', sa.String(length=50), nullable=True),
-    sa.ForeignKeyConstraint(['cohort_id'], ['cohorts.id'], ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['project_id'], ['projects.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
