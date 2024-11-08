@@ -1,5 +1,7 @@
 # Project-Tracking
 
+
+
 ## Overview
 The Student Project Tracker is a Flask-based web application designed to help manage student projects, cohort groups, and project members. The application allows users to create, view, and manage projects, with different permissions for admin and student roles.
 
@@ -59,5 +61,5 @@ role (string): Role of the member in the project (e.g., Developer, Lead, Reviewe
 Prerequisites
 Python 3.10+
 Flask and Flask-SQLAlchemy
-=======
 LINK TO BE DBDIAGRAM https://dbdiagram.io/d/672a25ece9daa85aca644e56
+Figma Wireframe https://www.figma.com/design/Z7mWEstVzV2YqGZjRO7LIs/group-5?node-id=1-103&t=EfN354ypAaOEedsl-1git add

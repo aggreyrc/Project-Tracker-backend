@@ -10,9 +10,11 @@ flask-cors = "*"
 flask-restful = "*"
 flask-sqlalchemy = "*"
 python-dotenv = "*"
+faker = "*"
+flask = "*"
+sqlalchemy-serializer = "*"
 
 [dev-packages]
 
 [requires]
 python_version = "3.12"
-python_version = "3.8"

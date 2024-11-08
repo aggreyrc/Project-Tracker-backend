@@ -3,29 +3,36 @@
 from flask import request, make_response, session, Flask
 from flask_migrate import Migrate
 from flask_restful import Resource,Api
-from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from flask_cors import CORS
+from flask_sqlalchemy import SQLAlchemy
 
-from models import User, Project, Cohort, ProjectMember,db
 
 import os
 
+db = SQLAlchemy()
+migrate = Migrate()
+api = Api()
+bcrypt = Bcrypt()
+cors = CORS()
+
 app = Flask(__name__)
+
+
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///app.db') 
  # ☝️ Takes care of both Postgres and sqlite databases
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = b'|\xab_\xac<\xcb\xe2\xc8~\x110\x82\xeb\xfa\xc8~'
 app.json.compact = False
 
-
-api = Api(app)
-CORS(app)
-
-migrate = Migrate(app, db)
+# Initialize extensions with the app
 db.init_app(app)
+migrate.init_app(app, db)
+api.init_app(app)
+bcrypt.init_app(app)
+cors.init_app(app)
 
-bcrypt = Bcrypt(app)
+from models import User, Project, Cohort, ProjectMember
 
 
 # Home page....................................................................
@@ -249,7 +256,94 @@ class UserByID(Resource):
 
         return make_response(response_dict,200)
         
-api.add_resource(UserByID, '/user/<int:id>')    
+api.add_resource(UserByID, '/user/<int:id>')  
+
+
+
+# CRUD FOR PROJECT MODEL
+
+class Projects(Resource):
+    
+    # Fetching all projects
+    def get(self):
+        projects = Project.query.all()
+        projects_list = []
+        for project in projects:
+            project_dict = {
+                "id":project.id,
+                "title":project.title,
+                "description":project.description,
+                "github_url": project.github_url,
+                "created_at": project.created_at
+            }
+        projects_list.append(project_dict)
+        return make_response(projects_list,200)
+    
+    # Creating a project
+    def post(self):
+        try:
+            data = request.get_json()
+            new_project = Project(
+                name=data['name'],
+                description=data['description'],
+                github_url=data['github_url'],
+                type = data['type'],
+                track = data['track'],
+                cohort_id = data['cohort_id'],
+                created_at=data['created_at'],
+            )
+            db.session.add(new_project)
+            db.session.commit()
+            return make_response(new_project.to_dict(), 200)
+        except:
+            return make_response({"error": "Invalid data"}, 400)
+        
+                
+    
+api.add_resource(Projects, '/projects')
+
+class ProjectById(Resource):
+    
+    # Fetching a project by id
+    def get(self, id):
+        project = Project.query.filter_by(id=id).first()
+        if project:
+            return make_response(project.to_dict(), 200)
+        else:
+            return make_response({"error": "Project not found"}, 404)
+        
+    # Deleting a project
+    def delete(self, id):
+        project = Project.query.filter_by(id=id).first()
+        if project:
+            db.session.delete(project)
+            db.session.commit()
+            return make_response({"Message": "Project Deleted Successfully"}, 200)
+        else:
+            return make_response({"error": "Project not found"}, 404)
+        
+    # Updating a project
+    def patch(self, id):
+        project = Project.query.filter_by(id=id).first()
+        
+        data = request.get_json()
+        
+        if project:
+            try:
+                for attr in data:
+                    setattr(project, attr, data[attr])
+                    
+                    db.session.add(project)
+                    db.session.commit()
+                    
+                    return make_response(project.to_dict(), 200)
+            except ValueError:
+                return make_response({"errors": ["validation errors"]}, 400)
+        else:
+            return make_response({"error": "Project not found"}, 404)
+
+api.add_resource(ProjectById, '/projects/<int:id>')
+            
 
 if __name__ == '__main__':
     app.run(port=5555, debug=True)
