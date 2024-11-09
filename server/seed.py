@@ -39,11 +39,11 @@ with app.app_context():
     users = []  # List to keep track of created user instances
     for _ in range(NUM_USERS):
         user = User(
-            username=fake.user_name(),  # Random user name
+            name=fake.name(),  # Random user name
             email=fake.unique.email(),  # Unique random email
             password=fake.password(length=10),  # Random password with specified length
             role=fake.random_element(elements=["student", "admin"]),  # Random role, either student or admin
-            cohort=random.choice(cohorts) # Assign user to a random cohort
+            cohort=random.choice(cohorts).name  # Assign user to a random cohort
         )
         db.session.add(user)  # Add user to the session
         users.append(user)  # Append user to list for later reference
@@ -58,8 +58,8 @@ with app.app_context():
             description=fake.paragraph(),  # Random description
             github_url=f"https://github.com/{fake.user_name()}/{fake.word()}",  # Random GitHub URL
             track=fake.random_element(elements=["Web", "Data Science", "DevOps"]),  # Random track
-            cohort=random.choice(cohorts),  # Assign project to a random cohort
-            user_id=random.choice(users).id  # Randomly select an owner from created users
+            cohort=random.choice(cohorts).name,  # Assign project to a random cohort
+            owner_id=random.choice(users).id  # Randomly select an owner from created users
         )
         db.session.add(project)  # Add project to the session
         projects.append(project)  # Append project to list for later reference
@@ -69,16 +69,11 @@ with app.app_context():
     # Seed Project Members
 
     for _ in range(NUM_PROJECT_MEMBERS):
-
-        selected_project = random.choice(projects)
-        
         project_member = ProjectMember(
-            name=fake.name(),
             project_id=random.choice(projects).id,  # Randomly assign a project
             user_id=random.choice(users).id,  # Randomly assign a user
             role=fake.random_element(elements=["Developer", "Lead", "Reviewer"]),  # Random role
-            joined_at=fake.date_this_year(),  # Random join date within the current year
-            cohort_id=selected_project.cohort.id
+            joined_at=fake.date_this_year()  # Random join date within the current year
         )
         db.session.add(project_member)  # Add project member to the session
     db.session.commit()  # Commit all project member records to the database
