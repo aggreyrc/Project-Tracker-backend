@@ -3,9 +3,9 @@
 from flask import request, make_response, session
 from flask_restful import Resource
 from models import User, Project, Cohort, ProjectMember
-from config import app,api,db
+from config import create_app,api,db
 
-
+app = create_app()
 # Home page....................................................................
 class Home(Resource):
      
