@@ -3,17 +3,15 @@
 from flask import request, make_response, session, Flask
 from flask_migrate import Migrate
 from flask_restful import Resource,Api
-from flask_bcrypt import Bcrypt
 from flask_cors import CORS
-from flask_sqlalchemy import SQLAlchemy
+from models import User,Project,db,bcrypt
 
 
 import os
 
-db = SQLAlchemy()
 migrate = Migrate()
 api = Api()
-bcrypt = Bcrypt()
+
 cors = CORS()
 
 app = Flask(__name__)
@@ -31,8 +29,6 @@ migrate.init_app(app, db)
 api.init_app(app)
 bcrypt.init_app(app)
 cors.init_app(app)
-
-from models import User, Project, Cohort, ProjectMember
 
 
 # Home page....................................................................
