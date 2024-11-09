@@ -1,8 +1,8 @@
-"""Creating tables
+"""sec migration
 
-Revision ID: a80f76f9f3ef
+Revision ID: b0246fd01dbb
 Revises: 
-Create Date: 2024-11-07 00:54:36.153493
+Create Date: 2024-11-09 15:42:05.266907
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'a80f76f9f3ef'
+revision = 'b0246fd01dbb'
 down_revision = None
 branch_labels = None
 depends_on = None

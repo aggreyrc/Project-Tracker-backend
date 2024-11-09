@@ -62,16 +62,13 @@ class Project(db.Model):
     github_url = db.Column(db.String(200), nullable=False)
     type = db.Column(db.String(50), nullable=False)  # Changed from 'track' to 'type'
     track = db.Column(db.String(50), nullable=False)
-    cohort_id = db.Column(db.Integer, db.ForeignKey('cohorts.id'), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    # Foreign key linking Project to one Cohort
     cohort_id = db.Column(db.Integer, db.ForeignKey('cohorts.id', ondelete='CASCADE'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     # Relationships
     members = db.relationship(
         'ProjectMember',
-        backref='project',
+        backref='project',  # The reverse relationship name
         lazy=True,
         cascade="all, delete-orphan"  # Delete project members when a project is deleted
     )
@@ -115,7 +112,7 @@ class Cohort(db.Model):
         if not self.github_url.startswith('http'):
             raise ValueError("Invalid GitHub URL format.")
 
-# ProjectMember Model - Join table for Many-to-Many relationship between Projects and Users
+## ProjectMember Model - Join table for Many-to-Many relationship between Projects and Users
 class ProjectMember(db.Model):
     __tablename__ = 'project_members'
     id = db.Column(db.Integer, primary_key=True)
@@ -124,13 +121,11 @@ class ProjectMember(db.Model):
     joined_at = db.Column(db.DateTime, default=datetime.utcnow)
     role = db.Column(db.String(50))  # e.g., 'Developer', 'Lead', 'Reviewer'
     
-    project = db.relationship('Project', backref='project_members', lazy=True)
+    # Remove the explicit project relationship, the backref in Project model handles this
+    # project = db.relationship('Project', backref='project_members', lazy=True)
 
     def __repr__(self):
         return f"<ProjectMember (Project ID: {self.project_id}, Cohort ID: {self.cohort_id}, Role: {self.role})>"
-
-
-
 
     def _repr_(self):
         return f"<ProjectMember (Project ID: {self.project_id}, User ID: {self.user_id}, Role: {self.role})>"
