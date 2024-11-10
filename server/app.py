@@ -4,7 +4,7 @@ from flask import request, make_response, session, Flask
 from flask_migrate import Migrate
 from flask_restful import Resource,Api
 from flask_cors import CORS
-from models import User,Project,db,bcrypt
+from models import User,Project,Cohort, ProjectMember, db,bcrypt
 import os
 
 app = Flask(__name__)
@@ -362,11 +362,136 @@ class ProjectById(Resource):
 api.add_resource(ProjectById, '/projects/<int:id>')
 
 
-
+# Cohort
 class Cohorts(Resource):
 
-api.add_resource(Cohorts, '/projects')    
+    # fetching all the cohorts in pages
+    def get(self):
+         
+         try:
+            # setting default page and cohort listing per page
+             page = int(request.args.get('page',1))
+             per_page = int(request.args.get('per_page',10))
+
+             per_page = min(per_page, 100)
+
+             cohorts_query = Cohort.query.order_by(Cohort.id.asc())
+
+             total_cohorts = cohorts_query.count()
+
+             cohorts_paginated = Cohort.query.paginate(page=page, per_page=per_page)
+
+             cohorts_list = []
+             for cohort in cohorts_paginated.items:
+                 cohort_dict = {
+                     "name":cohort.name,
+                     "description":cohort.description,
+                     "type":cohort.type,
+                 }
+
+             pagination_metadata = {
+                "total": total_cohorts,
+                "pages": cohorts_paginated.pages,
+                "page":cohorts_paginated.page,
+                "per_page":cohorts_paginated.per_page,
+                "has_next":cohorts_paginated.has_next,
+                "has_prev":cohorts_paginated.has_prev
+             }
+             
+             return make_response({
+                "cohorts":cohorts_list,
+                "pagination":pagination_metadata
+            },200) 
+         
+         except ValueError:
+             return make_response({"error":"Invalid page or per_page parameter"},400)
+         
+        #  Adding new cohorts
+    def post(self):
+           
+        try:
+            data = request.get_json()
+
+            new_cohort = Cohort(
+                name=data['name'],
+                description = data['description'],
+                type = data['type'],
+
+            )
+
+            db.session.add(new_cohort)
+            db.session.commit()
+
+            return make_response(new_cohort.to_dict(),201)
+        
+        except:
+            return make_response({"errors":["validation errors"]}),403
+
+api.add_resource(Cohorts, '/cohorts')   
+
+# cohort by ID
+class CohortByID(Resource):
+
+    # Fetching a cohort by ID
+    def get(self,id):
+
+        cohort = Cohort.query.filter(Cohort.id == id).first()
+
+        if cohort:
+            return make_response(cohort.to_dict(),200)
+        return make_response({"error": "Cohort not found"},404)
+
+    # Updating user by ID
+    def patch(self,id):
+        
+        cohort = Cohort.query.filter(Cohort.id == id).first()
+
+        data = request.get_json()
+
+        if cohort:
+
+            try: 
+                for attr in data:
+                    setattr(cohort,attr,data[attr])
+
+                    db.session.add(cohort)
+                    db.session.commit()
+
+                cohort_dict = {
+                    "name":cohort.name,
+                    "description":cohort.description,
+                    "track":cohort.track,
+                }  
+
+                response = make_response(cohort_dict,200)
+
+                return response  
             
+            except ValueError:
+                return make_response({"errors":["validation errors"]},400)
+            
+        return make_response({"error": "Cohort not found"},404)
+ 
+    # Deleting a cohort by their ID
+    def delete(self,id):
+        
+        cohort = Cohort.query.filter(Cohort.id == id).first()
+
+        if not cohort:
+            return make_response({"error": "Cohort not found"},404)
+        
+        db.session.delete(cohort)
+        db.session.commit()
+
+        response_dict = {"Message": "Cohort successfully deleted"}
+
+        return make_response(response_dict,200)
+    
+
+api.add_resource(CohortByID, '/cohorts/<int:id>')   
+
+
+
 
 if __name__ == '__main__':
     app.run(port=5555, debug=True)
