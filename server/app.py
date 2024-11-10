@@ -491,6 +491,82 @@ class CohortByID(Resource):
 api.add_resource(CohortByID, '/cohorts/<int:id>')   
 
 
+# Project Members CRUD
+class ProjectMembers(Resource):
+
+    def get(self):
+
+        try:
+        
+            page = int(request.args.get('page',1))
+            per_page = int(request.args.get('page_page',10))
+
+            per_page = min(per_page,100)
+
+            project_members_query = ProjectMember.query.order_by(ProjectMember.id.asc())
+
+            total_project_members = project_members_query.count()
+
+            project_members_paginated = ProjectMember.query.paginate(page=page, per_page=per_page)
+
+            project_members_list = []
+            for project_member in project_members_paginated.items:
+                project_member_dict = {
+                    "name":project_member.name,
+                    "role":project_member.role,
+                    "project_id":project_member.project_id,
+                    "cohort_id":project_member.cohort_id,
+                    # "cohort":project_member.cohort.name,
+                    # "project":project_member.cohort.name,
+                }
+                project_members_list.append(project_member_dict)
+
+            pagination_metadata = {
+                "total":total_project_members,
+                "pages":project_members_paginated.pages,
+                "page":project_members_paginated.page,
+                "per_page":project_members_paginated.per_page,
+                "has_next":project_members_paginated.has_next,
+                "has_prev":project_members_paginated.has_prev
+            }   
+
+            return make_response({
+                "project_members":project_members_list,
+                "pagination":pagination_metadata
+            },200) 
+    
+        except ValueError:
+             return make_response({"error":"Invalid page or per_page parameter"},400)
+
+    
+    def post(self):
+        
+        try:
+            data = request.get_json()
+
+            new_project_member = ProjectMember(
+                name = data['name'],
+                role = data['role'],
+                cohort_id = data['cohort_id'],
+                project_id = data['project_id']
+
+            )
+            db.session.add(new_project_member)
+            db.session.commit()
+
+            return make_response(new_project_member.to_dict(),201)
+        
+        except:
+            return make_response({"errors":["validation errors"]}),403
+
+api.add_resource(ProjectMembers, '/projectmembers')
+
+
+
+class ProjectMemberById(Resource):
+
+    pass
+
 
 
 if __name__ == '__main__':
