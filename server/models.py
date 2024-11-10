@@ -1,7 +1,11 @@
 from flask_sqlalchemy import SQLAlchemy
+from flask_bcrypt import Bcrypt
 from datetime import datetime
 from sqlalchemy.exc import IntegrityError
-from config import db,bcrypt
+
+
+db = SQLAlchemy()
+bcrypt = Bcrypt()
 
 
 # User Model for Authentication
@@ -13,6 +17,8 @@ class User(db.Model):
     password = db.Column(db.String(200), nullable=False)
     is_admin = db.Column(db.Boolean, default=False)  # True for admin, False for student
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    role = db.Column(db.String(20), nullable=False)
+    
 
     # Permissions
     def can_add_project(self):
@@ -33,8 +39,7 @@ class User(db.Model):
 
     def __repr__(self):
         return f"<User {self.username} (Admin: {self.is_admin})>"
-    role = db.Column(db.String(20), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
 
     def _repr_(self):
         return f"<User {self.name} (Role: {self.role})>"

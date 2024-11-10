@@ -5,30 +5,21 @@ from flask_migrate import Migrate
 from flask_restful import Resource,Api
 from flask_cors import CORS
 from models import User,Project,db,bcrypt
-
-
 import os
-
-migrate = Migrate()
-api = Api()
-
-cors = CORS()
 
 app = Flask(__name__)
 
-
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///app.db') 
- # ☝️ Takes care of both Postgres and sqlite databases
+                                    # ☝️ Takes care of both Postgres and sqlite databases
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = b'|\xab_\xac<\xcb\xe2\xc8~\x110\x82\xeb\xfa\xc8~'
 app.json.compact = False
 
-# Initialize extensions with the app
+CORS(app)
+migrate = Migrate(app, db)
 db.init_app(app)
-migrate.init_app(app, db)
-api.init_app(app)
 bcrypt.init_app(app)
-cors.init_app(app)
+api = Api(app)
 
 
 # Home page....................................................................
@@ -262,18 +253,50 @@ class Projects(Resource):
     
     # Fetching all projects
     def get(self):
-        projects = Project.query.all()
-        projects_list = []
-        for project in projects:
-            project_dict = {
-                "id":project.id,
-                "title":project.title,
-                "description":project.description,
-                "github_url": project.github_url,
-                "created_at": project.created_at
-            }
-        projects_list.append(project_dict)
-        return make_response(projects_list,200)
+
+        try:
+
+            page = int(request.args.get('page',1))
+            per_page = int(request.args.get('per_page',10))
+
+            per_page = min(per_page,100)
+
+            projects_query = Project.query.order_by(Project.id.asc())
+
+            total_projects = projects_query.count()
+
+            projects_paginated = Project.query.paginate(page=page, per_page=per_page)
+
+            projects_list = []
+
+            for project in projects_paginated.items:
+                project_dict = {
+                    "name":project.name,
+                    "descrition":project.description,
+                    "github_url":project.github_url,
+                    "type":project.type,
+                    "cohort_id":project.cohort_id,
+                    "members":project.member.name
+                }
+                projects_list.append(project_dict)
+
+            pagination_metadata = {
+                "total":total_projects,
+                "pages":projects_paginated.pages,
+                "page":projects_paginated.page,
+                "per_page":projects_paginated.per_page,
+                "has_next":projects_paginated.has_next,
+                "has_prev":projects_paginated.has_prev
+            }    
+
+            return make_response({
+                "projects":projects_list,
+                "pagination":pagination_metadata
+            },200)
+        
+        except  ValueError:
+            return make_response({"error":"Invalid page or per_page parameter"},400)
+
     
     # Creating a project
     def post(self):
@@ -286,7 +309,7 @@ class Projects(Resource):
                 type = data['type'],
                 track = data['track'],
                 cohort_id = data['cohort_id'],
-                created_at=data['created_at'],
+                # created_at=data['created_at'],
             )
             db.session.add(new_project)
             db.session.commit()
@@ -294,8 +317,6 @@ class Projects(Resource):
         except:
             return make_response({"error": "Invalid data"}, 400)
         
-                
-    
 api.add_resource(Projects, '/projects')
 
 class ProjectById(Resource):
@@ -339,6 +360,12 @@ class ProjectById(Resource):
             return make_response({"error": "Project not found"}, 404)
 
 api.add_resource(ProjectById, '/projects/<int:id>')
+
+
+
+class Cohorts(Resource):
+
+api.add_resource(Cohorts, '/projects')    
             
 
 if __name__ == '__main__':
