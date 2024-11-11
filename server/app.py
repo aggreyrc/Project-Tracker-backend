@@ -40,22 +40,27 @@ class Signup(Resource):
     
     def post(self):
 
-        username  = request.get_json()['username']
-        password = request.get_json()['password']
+        username  = request.get_json().get('username')
+        password = request.get_json().get('password')
 
-        if username and password:
-
-            new_user = User(username = username)
-            new_user.password_hash = password
+        if not username or not password:
+            return {'error':'Username and password required'},400
         
-            db.session.add(new_user)
-            db.session.commit()
-
-            session['user_id'] = new_user.id
-
-            return new_user.to_dict(), 201
+        # checking if username exits
+        existing_user =User.query.filter_by(username=username).first()
+        if existing_user:
+            return {'error':'Username already taken'},409
         
-        return {'error': 'Invalid username and password '},400
+        # Creating new user
+        new_user = User(username=username)
+        new_user.set_password(password)
+
+        db.session.add(new_user)
+        db.session.commit()
+
+        session['user_id'] = new_user.id
+
+        return {'message':'User created successfully'},201
         
 api.add_resource(Signup, '/signup', endpoint='signup')
 
@@ -65,13 +70,13 @@ class CheckSession(Resource):
 
     def get(self):
 
-        if session.get('user_id'):
+        if 'user_id' in session:
+            user = User.query.get(session['user_id'])
 
-            user = User.query.filter(User.id == session['user_id']).first()
+            if user:
+                return {'message': 'User authenticated'}, 200
+        return {}, 401
 
-            return user.to_dict(),200
-        
-        return {},204
     
 
 api.add_resource(CheckSession, '/check_session', endpoint='checks_session')
@@ -82,17 +87,17 @@ class Login(Resource):
         
         def post(self):
      
-            username = request.get_json()['username']
-            password = request.get_json()['password']
+            username = request.get_json().get('username')
+            password = request.get_json().get('password')
 
             user = User.query.filter(User.username == username).first()
 
-            if user.authenticate(password):
-
-                session['user_id'] = user.id
-                return user.to_dict(), 200
- 
-            return {}, 204
+            if not user or not user.check_password(password):
+                return {'error':'Invalid credentials'},401
+            
+            session['user_id'] = user.id
+            return {'message': 'Logged in successfully'},200
+        
         
 api.add_resource(Login, '/login', endpoint='login')
 
@@ -100,8 +105,9 @@ api.add_resource(Login, '/login', endpoint='login')
 class Logout(Resource):
     
     def delete(self):
-        session['user_id'] = None
-        return{},204
+
+       session.pop('user_id', None)
+       return {}, 204
     
 api.add_resource(Logout,'/logout', endpoint='logout')
 

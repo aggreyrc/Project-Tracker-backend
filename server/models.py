@@ -58,6 +58,14 @@ class User(db.Model):
         self.validate_email(self.email)
 
 
+     # For authentication(important)
+    def set_password(self, password):
+        self.password = bcrypt.generate_password_hash(password).decode('utf-8')
+
+    def check_password(self, password):
+        return bcrypt.check_password_hash(self.password, password)
+
+
 # Project Model
 class Project(db.Model):
     __tablename__ = 'projects'
