@@ -1,6 +1,4 @@
 
-
-
 import random
 import string
 from flask_sqlalchemy import SQLAlchemy

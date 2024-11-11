@@ -17,7 +17,7 @@ app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///app.db') 
                                     # ☝️ Takes care of both Postgres and sqlite databases
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SECRET_KEY'] = b'|\xab_\xac<\xcb\xe2\xc8~\x110\x82\xeb\xfa\xc8~'
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 app.json.compact = False
 
 # Flask-Mail Configuration
