@@ -279,13 +279,16 @@ class Projects(Resource):
             projects_list = []
 
             for project in projects_paginated.items:
+
+                members_list = [{'id': member.id, 'name': member.name, 'role': member.role} for member in project.members]
+
                 project_dict = {
                     "name":project.name,
-                    "descrition":project.description,
+                    "description":project.description,
                     "github_url":project.github_url,
                     "type":project.type,
                     "cohort_id":project.cohort_id,
-                    "members":project.member.name
+                    "members":members_list
                 }
                 projects_list.append(project_dict)
 
@@ -316,13 +319,14 @@ class Projects(Resource):
                 description=data['description'],
                 github_url=data['github_url'],
                 type = data['type'],
-                track = data['track'],
                 cohort_id = data['cohort_id'],
                 # created_at=data['created_at'],
             )
+
+            new_project.validate()
             db.session.add(new_project)
             db.session.commit()
-            return make_response(new_project.to_dict(), 200)
+            return make_response(new_project.to_dict(), 201)
         except:
             return make_response({"error": "Invalid data"}, 400)
         
@@ -397,6 +401,8 @@ class Cohorts(Resource):
                      "description":cohort.description,
                      "type":cohort.type,
                  }
+
+             cohorts_list.append(cohort_dict)     
 
              pagination_metadata = {
                 "total": total_cohorts,
@@ -508,7 +514,7 @@ class ProjectMembers(Resource):
         try:
         
             page = int(request.args.get('page',1))
-            per_page = int(request.args.get('page_page',10))
+            per_page = int(request.args.get('per_page',10))
 
             per_page = min(per_page,100)
 
@@ -518,18 +524,8 @@ class ProjectMembers(Resource):
 
             project_members_paginated = ProjectMember.query.paginate(page=page, per_page=per_page)
 
-            project_members_list = []
-            for project_member in project_members_paginated.items:
-                project_member_dict = {
-                    "name":project_member.name,
-                    "role":project_member.role,
-                    "project_id":project_member.project_id,
-                    "cohort_id":project_member.cohort_id,
-                    # "cohort":project_member.cohort.name,
-                    # "project":project_member.cohort.name,
-                }
-                project_members_list.append(project_member_dict)
-
+            project_members_list = [project_member.to_dict() for project_member in project_members_paginated.items]
+        
             pagination_metadata = {
                 "total":total_project_members,
                 "pages":project_members_paginated.pages,

@@ -121,7 +121,7 @@ class Project(db.Model, SerializerMixin):
     # Relationships
     owner =db.relationship('User', back_populates='projects')
     cohort = db.relationship('Cohort', back_populates='projects')
-    project_members = db.relationship(
+    members = db.relationship(
         'ProjectMember',
         back_populates='project',  # Explicitly defining bidirectional relationship
         lazy=True,
@@ -130,7 +130,7 @@ class Project(db.Model, SerializerMixin):
 
     def __repr__(self):
         # iterate over project member names
-        member_names = [member.name for member in self.project_members]
+        member_names = [member.name for member in self.members]
 
         return f"<Project {self.name} owner_id: {self.user_id} owner: {self.owner.username}  " +\
         f"project_members: {','.join(member_names)}>"
@@ -165,7 +165,7 @@ class Cohort(db.Model, SerializerMixin):
         cascade="all, delete"
     )
 
-    project_members = db.relationship(
+    members = db.relationship(
         'ProjectMember',
         back_populates='cohort',
         lazy=True,
@@ -198,11 +198,24 @@ class ProjectMember(db.Model, SerializerMixin):
     cohort_id = db.Column(db.Integer, db.ForeignKey('cohorts.id'), nullable=False)
 
     # Relationships
-    project = db.relationship('Project', back_populates='project_members', lazy=True)  # Using back_populates
-    cohort = db.relationship('Cohort', back_populates='project_members', lazy=True) 
+    project = db.relationship('Project', back_populates='members', lazy=True)  # Using back_populates
+    cohort = db.relationship('Cohort', back_populates='members', lazy=True) 
 
     def __repr__(self):
         return f"<ProjectMember (Project ID: {self.project_id}, User ID: {self.user_id}, Role: {self.role})>"
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'project_id': self.project_id,
+            'joined_at': self.joined_at.isoformat() if self.joined_at else None,
+            'role': self.role,
+            'user_id': self.user_id,
+            'cohort_id': self.cohort_id,
+            
+        }
+    
 
     # Validators
     def validate(self):

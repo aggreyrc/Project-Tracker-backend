@@ -109,8 +109,9 @@ def seed_data():
             name="Monalisa Sabina",
             project_id=project1.id,
             user_id=admin_user.id,  # Assuming admin is part of this project
-            role="Team Lead",
-            joined_at=datetime.now(timezone.utc)
+            role="Developer",
+            joined_at=datetime.now(timezone.utc),
+            cohort_id=1
         )
 
         project_member2 = ProjectMember(
@@ -118,7 +119,8 @@ def seed_data():
             project_id=project1.id,
             user_id=student_user.id,
             role="Developer",
-            joined_at=datetime.now(timezone.utc)
+            joined_at=datetime.now(timezone.utc),
+            cohort_id=1
         )
 
         project_member3 = ProjectMember(
@@ -126,7 +128,8 @@ def seed_data():
             project_id=project2.id,
             user_id=student_user.id,
             role="Data Scientist",
-            joined_at=datetime.now(timezone.utc) + timedelta(days=1)
+            joined_at=datetime.now(timezone.utc) + timedelta(days=1),
+            cohort_id=2
         )
 
         # Adding project members to the session
