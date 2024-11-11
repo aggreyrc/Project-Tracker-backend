@@ -34,7 +34,7 @@ class User(db.Model, SerializerMixin):
     serialize_rules = ('-password', '-verification_code',)
 
     def __repr__(self):
-        return f"<User {self.username} (Admin: {self.is_admin}, Verified: {self.is_verified})>"
+        return f"<User {self.username} (Admin: {self.is_admin}, Verified: {self.is_verified}), Verification_code: {self.verification_code}>"
 
 
     # For authentication(important)
@@ -49,8 +49,17 @@ class User(db.Model, SerializerMixin):
     def generate_verification_code(self):
         code = ''.join(random.choices(string.digits, k=6))
         self.verification_code = code
-        db.session.commit()
+        try:
+           db.session.add(self)
+           db.session.commit()
+           print(f"Code committed to database: {self.verification_code}")
+        except Exception as e:
+           print(f"Error committing verification code to database: {e}")
         return code
+
+        # db.session.add(self)
+        # db.session.commit()
+        # return code
 
     # Validate email format
     @staticmethod
@@ -88,6 +97,7 @@ def send_verification_email(recipient_email, code):
         recipients=[recipient_email],
         body=f"Your verification code is: {code}"
        )
+    print(f"Sending verification code{code} to {recipient_email}")
     mail.send(msg)
 
 
@@ -162,6 +172,7 @@ class ProjectMember(db.Model, SerializerMixin):
     __tablename__ = 'project_members'
     
     id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id', ondelete='CASCADE'), nullable=False)
     user_id = db.Column(db.Integer, nullable=False)  # No foreign key, purely associative
     joined_at = db.Column(db.DateTime, default=datetime.utcnow)

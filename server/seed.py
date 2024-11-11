@@ -1,6 +1,6 @@
 # from config import db, bcrypt, app  # Import the app from your config file
 from models import User, Project, Cohort, ProjectMember,db,bcrypt
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta,timezone
 from app import app
 
 
@@ -12,6 +12,7 @@ def seed_data():
         db.create_all()
 
         # Creating sample users
+        print('\nADDING USERS...')
         admin_user = User(
             username="Isaac Odhiambo",
             email="odhiamboisaac@gmail.com",
@@ -35,7 +36,17 @@ def seed_data():
         db.session.add(student_user)
         db.session.commit()
 
+        # Debugging verification code
+        print('\nDebugging user code...')
+        admin_verification_code = admin_user.generate_verification_code()
+        print(admin_verification_code)
+
+        student_verification_code = student_user.generate_verification_code()
+        print(student_verification_code)
+
+
         # Creating sample cohorts
+        print('\nADDING COHORTS...')
         cohort1 = Cohort(
             name="Cohort 2024",
             description="This is the 2024 cohort.",
@@ -60,13 +71,14 @@ def seed_data():
         db.session.commit()
 
         # Creating sample projects with image URLs
+        print('\nADDING PROJECTS..')
         project1 = Project(
             name="Project Alpha",
             description="This is the Alpha project for cohort 2024.",
             github_url="https://github.com/example/projectalpha",
             type="Web Development",
             cohort_id=cohort1.id,
-            created_at=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
             image_url="https://example.com/images/project_alpha.png"
         )
 
@@ -76,7 +88,7 @@ def seed_data():
             github_url="https://github.com/example/projectbeta",
             type="Machine Learning",
             cohort_id=cohort2.id,
-            created_at=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
             image_url="https://example.com/images/project_beta.png"
         )
 
@@ -86,25 +98,29 @@ def seed_data():
         db.session.commit()
 
         # Creating sample project members
+        print('\nADDING PROJECT MEMBERS...')
         project_member1 = ProjectMember(
+            name="Monalisa Sabina",
             project_id=project1.id,
             user_id=admin_user.id,  # Assuming admin is part of this project
             role="Team Lead",
-            joined_at=datetime.utcnow()
+            joined_at=datetime.now(timezone.utc)
         )
 
         project_member2 = ProjectMember(
+            name="Vitalis",
             project_id=project1.id,
             user_id=student_user.id,
             role="Developer",
-            joined_at=datetime.utcnow()
+            joined_at=datetime.now(timezone.utc)
         )
 
         project_member3 = ProjectMember(
+            name="Aggey",
             project_id=project2.id,
             user_id=student_user.id,
             role="Data Scientist",
-            joined_at=datetime.utcnow() + timedelta(days=1)
+            joined_at=datetime.now(timezone.utc) + timedelta(days=1)
         )
 
         # Adding project members to the session
@@ -113,7 +129,16 @@ def seed_data():
         db.session.add(project_member3)
         db.session.commit()
 
-        print("Seeding completed successfully!")
+
+        print('\nTESTING')
+        print('Getting Users')
+        users_list = User.query.all()
+        print(users_list)
+      
+
+        print("\nSeeding completed successfully!")
+
+
 
 
 if __name__ == "__main__":
