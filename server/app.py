@@ -165,27 +165,6 @@ class Users(Resource):
             return make_response({"error":"Invalid page or per_page parameter"},400)
 
   
-    
-    # Adding new users
-    def post(self):
-
-        try:
-            data =  request.get_json()
-
-            new_user = User(
-                username = data['username'],
-                email = data['email'],
-                is_admin = data.get('is_admin',False),
-            )
-
-            db.session.add(new_user)
-            db.session.commit()
-
-            return make_response(new_user.to_dict(),201)
-    
-        except:
-            return make_response({"errors":["validation errors"]}),403
-
 api.add_resource(Users, '/users')
 
 
