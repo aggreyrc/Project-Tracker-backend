@@ -165,6 +165,7 @@ class Users(Resource):
                     "username":user.username,
                     "email":user.email,
                     "is_admin":user.is_admin,
+                    "role":user.role
                 }
                 users_list.append(user_dict)
 

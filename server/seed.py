@@ -79,7 +79,11 @@ def seed_data():
             type="Web Development",
             cohort_id=cohort1.id,
             created_at=datetime.now(timezone.utc),
-            image_url="https://example.com/images/project_alpha.png"
+            image_url="https://example.com/images/project_alpha.png",
+            user_id=1,
+        
+
+
         )
 
         project2 = Project(
@@ -89,7 +93,9 @@ def seed_data():
             type="Machine Learning",
             cohort_id=cohort2.id,
             created_at=datetime.now(timezone.utc),
-            image_url="https://example.com/images/project_beta.png"
+            image_url="https://example.com/images/project_beta.png",
+            user_id=2,
+            
         )
 
         # Adding projects to the session
@@ -134,6 +140,18 @@ def seed_data():
         print('Getting Users')
         users_list = User.query.all()
         print(users_list)
+
+        print('\nGetting projects')
+        projects_list = Project.query.all()
+        print(projects_list)
+
+        print('\nGetting cohorts')
+        cohorts_list = Cohort.query.all()
+        print(cohorts_list)
+
+        print('\nGetting project members')
+        project_members_list = ProjectMember.query.all()
+        print(project_members_list)
       
 
         print("\nSeeding completed successfully!")

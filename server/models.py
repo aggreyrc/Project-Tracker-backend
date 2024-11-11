@@ -28,6 +28,9 @@ class User(db.Model, SerializerMixin):
     verification_code = db.Column(db.String(6), nullable=True)  # Field to store verification code
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     role = db.Column(db.String(20), nullable=False)
+
+    # relationship between user"owner" and project
+    projects = db.relationship('Project', back_populates='owner',cascade="all,delete-orphan")
     
 
     # Serialization rules: excluding sensitive fields
@@ -57,9 +60,6 @@ class User(db.Model, SerializerMixin):
            print(f"Error committing verification code to database: {e}")
         return code
 
-        # db.session.add(self)
-        # db.session.commit()
-        # return code
 
     # Validate email format
     @staticmethod
@@ -110,11 +110,16 @@ class Project(db.Model, SerializerMixin):
     description = db.Column(db.Text, nullable=False)
     github_url = db.Column(db.String(200), nullable=False)
     type = db.Column(db.String(50), nullable=False)  # project type
-    cohort_id = db.Column(db.Integer, db.ForeignKey('cohorts.id', ondelete='CASCADE'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     image_url = db.Column(db.String(255), nullable=True)  # New column for optional image URL
+    
+    # Foreign Keys
+    user_id=db.Column(db.Integer, db.ForeignKey('users.id'),nullable=False)
+    cohort_id = db.Column(db.Integer, db.ForeignKey('cohorts.id', ondelete='CASCADE'), nullable=False)
+
 
     # Relationships
+    owner =db.relationship('User', back_populates='projects')
     cohort = db.relationship('Cohort', back_populates='projects')
     project_members = db.relationship(
         'ProjectMember',
@@ -124,7 +129,11 @@ class Project(db.Model, SerializerMixin):
     )
 
     def __repr__(self):
-        return f"<Project {self.name}>"
+        # iterate over project member names
+        member_names = [member.name for member in self.project_members]
+
+        return f"<Project {self.name} owner_id: {self.user_id} owner: {self.owner.username}  " +\
+        f"project_members: {','.join(member_names)}>"
 
     # Validators
     def validate(self):
@@ -156,6 +165,13 @@ class Cohort(db.Model, SerializerMixin):
         cascade="all, delete"
     )
 
+    project_members = db.relationship(
+        'ProjectMember',
+        back_populates='cohort',
+        lazy=True,
+        cascade="all, delete"
+    )
+
     def __repr__(self):
         return f"<Cohort {self.name} (Type: {self.type})>"
 
@@ -174,12 +190,16 @@ class ProjectMember(db.Model, SerializerMixin):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id', ondelete='CASCADE'), nullable=False)
-    user_id = db.Column(db.Integer, nullable=False)  # No foreign key, purely associative
     joined_at = db.Column(db.DateTime, default=datetime.utcnow)
     role = db.Column(db.String(50))  # e.g., 'Developer', 'Lead', 'Reviewer'
 
+    # Foreign key
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'),nullable=False) 
+    cohort_id = db.Column(db.Integer, db.ForeignKey('cohorts.id'), nullable=False)
+
     # Relationships
     project = db.relationship('Project', back_populates='project_members', lazy=True)  # Using back_populates
+    cohort = db.relationship('Cohort', back_populates='project_members', lazy=True) 
 
     def __repr__(self):
         return f"<ProjectMember (Project ID: {self.project_id}, User ID: {self.user_id}, Role: {self.role})>"
