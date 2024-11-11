@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
 
+from dotenv import load_dotenv
+load_dotenv()
+
 from flask import request, make_response, session, Flask
 from flask_migrate import Migrate
 from flask_restful import Resource,Api
 from flask_cors import CORS
+from flask_mail import Mail
+
 from models import User,Project,Cohort, ProjectMember, db,bcrypt
 import os
 
@@ -15,11 +20,19 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = b'|\xab_\xac<\xcb\xe2\xc8~\x110\x82\xeb\xfa\xc8~'
 app.json.compact = False
 
+# Flask-Mail Configuration
+app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER', 'smtp.example.com')
+app.config['MAIL_PORT'] = int(os.getenv('MAIL_PORT', 587))
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME', 'your_email@example.com')
+app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD', 'your_email_password')
+
 CORS(app)
 migrate = Migrate(app, db)
 db.init_app(app)
 bcrypt.init_app(app)
 api = Api(app)
+mail = Mail(app)
 
 
 # Home page....................................................................

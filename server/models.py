@@ -9,7 +9,7 @@ from datetime import datetime
 from sqlalchemy.exc import IntegrityError
 from flask_mail import Mail, Message
 from sqlalchemy_serializer import SerializerMixin
-from config import db, bcrypt, app, mail
+from app import db, bcrypt, mail
 
 
 # User Model for Authentication
