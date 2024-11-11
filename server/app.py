@@ -90,7 +90,6 @@ class Logout(Resource):
 api.add_resource(Logout,'/logout', endpoint='logout')
 
 # ..............................................................................
-
 # C.R.U.D actions for each model
 
 #User
@@ -99,16 +98,46 @@ class Users(Resource):
     # fetching all the users
     def get(self):
 
-        users_list=[]
-        for user in User.query.all():
-            user_dict = {
-                "username":user.username,
-                "email":user.email,
-                "is_admin":user.is_admin,
-            }
-            users_list.append(user_dict)
+        try: 
+            page = int(request.args.get('page',1)) #defaults to page number 1
+            per_page = int(request.args.get('per_page',10)) #defaults to listing 10 users per page
 
-        return make_response(users_list,200)
+            # Limit maximum users per page
+            per_page = min(per_page,100)
+
+            # sorting the users in asccending order
+            users_query = User.query.order_by(User.id.asc())
+
+            total_users = users_query.count()
+            users_paginated = User.query.paginated(page=page, per_page=per_page)
+
+            users_list = []
+            for user in users_paginated.item:
+                user_dict = {
+                    "username":user.username,
+                    "email":user.email,
+                    "is_admin":user.is_admin,
+                }
+                users_list.append(user_dict)
+
+            pagination_metadata = {
+                "total":total_users,
+                "pages":users_paginated.pages,
+                "page":users_paginated.page,
+                "per_page":users_paginated.per_page,
+                "has_next":users_paginated.has_next,
+                "has_prev":users_paginated.has_prev
+            }
+
+            return make_response({
+                "users":users_list,
+                "pagination":pagination_metadata
+            },200)
+
+        except ValueError:
+            return make_response({"error":"Invalid page or per_page parameter"},400)
+
+  
     
     # Adding new users
     def post(self):
@@ -132,6 +161,7 @@ class Users(Resource):
 
 api.add_resource(Users, '/users')
 
+# User by ID
 class UserByID(Resource):
 
     # Fetching a user by id
