@@ -7,7 +7,12 @@ from datetime import datetime
 from sqlalchemy.exc import IntegrityError
 from flask_mail import Mail, Message
 from sqlalchemy_serializer import SerializerMixin
-from app import db, bcrypt, mail
+
+
+db =SQLAlchemy()
+bcrypt=Bcrypt()
+mail=Mail()
+
 
 
 # User Model for Authentication
@@ -17,8 +22,8 @@ class User(db.Model, SerializerMixin):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
-    password = db.Column(db.String(200), nullable=False)
-    is_admin = db.Column(db.Boolean, default=False)  # True for admin, False for student
+    password_hash = db.Column(db.String(128), nullable=False)  # True for admin, False for student
+    is_admin = db.Column(db.Boolean, default=False)
     is_verified = db.Column(db.Boolean, default=False)  # Field to track verification status
     verification_code = db.Column(db.String(6), nullable=True)  # Field to store verification code
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -26,10 +31,19 @@ class User(db.Model, SerializerMixin):
     
 
     # Serialization rules: excluding sensitive fields
-    serialize_rules = ('-password', '-verification_code')
+    serialize_rules = ('-password', '-verification_code',)
 
     def __repr__(self):
         return f"<User {self.username} (Admin: {self.is_admin}, Verified: {self.is_verified})>"
+
+
+    # For authentication(important)
+    def set_password_hash(self, password):
+        self.password = bcrypt.generate_password_hash(password).decode('utf-8')
+
+    def check_password_hash(self, password):
+        return bcrypt.check_password_hash(self.password, password)
+    
 
     # Generate a random 6-digit verification code
     def generate_verification_code(self):
@@ -73,16 +87,8 @@ def send_verification_email(recipient_email, code):
         sender="yourapp@example.com",  # Replace with your actual sender email
         recipients=[recipient_email],
         body=f"Your verification code is: {code}"
-    )
+       )
     mail.send(msg)
-
-
-     # For authentication(important)
-    def set_password(self, password):
-        self.password = bcrypt.generate_password_hash(password).decode('utf-8')
-
-    def check_password(self, password):
-        return bcrypt.check_password_hash(self.password, password)
 
 
 # Project Model
@@ -129,8 +135,8 @@ class Cohort(db.Model, SerializerMixin):
     description = db.Column(db.String(50), nullable=False)
     github_url = db.Column(db.String(50), nullable=False)
     type = db.Column(db.String(50), nullable=False)
-    start_date = db.Column(db.Date, nullable=False)
-    end_date = db.Column(db.Date, nullable=False)
+    start_date = db.Column(db.DateTime, nullable=False)
+    end_date = db.Column(db.DateTime, nullable=False)
 
     # Relationship with Project
     projects = db.relationship(

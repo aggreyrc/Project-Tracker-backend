@@ -1,6 +1,7 @@
-from config import db, bcrypt, app  # Import the app from your config file
-from models import User, Project, Cohort, ProjectMember
+# from config import db, bcrypt, app  # Import the app from your config file
+from models import User, Project, Cohort, ProjectMember,db,bcrypt
 from datetime import datetime, timedelta
+from app import app
 
 
 def seed_data():
@@ -14,17 +15,19 @@ def seed_data():
         admin_user = User(
             username="Isaac Odhiambo",
             email="odhiamboisaac@gmail.com",
-            password=bcrypt.generate_password_hash("admin123").decode('utf-8'),
+            password_hash=bcrypt.generate_password_hash("admin123").decode('utf-8'),
             is_admin=True,
-            is_verified=True  # Set as verified for admin access
+            is_verified=True, # Set as verified for admin access
+            role="admin"
         )
 
         student_user = User(
             username="Odiwuor Jakababa",
             email="odiwuorisaach@gmail.com",
-            password=bcrypt.generate_password_hash("student123").decode('utf-8'),
+            password_hash=bcrypt.generate_password_hash("student123").decode('utf-8'),
             is_admin=False,
-            is_verified=True  # Set as verified for normal student
+            is_verified=True,  # Set as verified for normal student
+            role="student"
         )
 
         # Adding users to the session

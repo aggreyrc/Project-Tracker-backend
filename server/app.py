@@ -7,9 +7,8 @@ from flask import request, make_response, session, Flask
 from flask_migrate import Migrate
 from flask_restful import Resource,Api
 from flask_cors import CORS
-from flask_mail import Mail
 
-from models import User,Project,Cohort, ProjectMember, db,bcrypt
+from models import User,Project,Cohort, ProjectMember, db,bcrypt, mail,Message
 import os
 
 app = Flask(__name__)
@@ -31,9 +30,8 @@ CORS(app)
 migrate = Migrate(app, db)
 db.init_app(app)
 bcrypt.init_app(app)
+mail.init_app(app)
 api = Api(app)
-mail = Mail(app)
-
 
 # Home page....................................................................
 class Home(Resource):
@@ -41,7 +39,19 @@ class Home(Resource):
      def get(self):
           
           return {
-               "message": " 🗂️ Welcome to the Project Tracker API 🗂️"
+               "message": " 🗂️ Welcome to the Project Tracker API 🗂️",
+               "api-version": "vi",
+               "description": "Project tracker",
+               "available_endpoints": [
+                   "/users",
+                   "/projects",
+                   "/cohorts",
+                   "/projectmembers",
+                   "/signup",
+                   "/login",
+                   "/logout",
+                   "/check_session"
+               ]
           },200
 
 api.add_resource(Home, '/')
@@ -66,7 +76,7 @@ class Signup(Resource):
         
         # Creating new user
         new_user = User(username=username)
-        new_user.set_password(password)
+        new_user.set_password_hash(password)
 
         db.session.add(new_user)
         db.session.commit()
@@ -105,7 +115,7 @@ class Login(Resource):
 
             user = User.query.filter(User.username == username).first()
 
-            if not user or not user.check_password(password):
+            if not user or not user.check_password_hash(password):
                 return {'error':'Invalid credentials'},401
             
             session['user_id'] = user.id
