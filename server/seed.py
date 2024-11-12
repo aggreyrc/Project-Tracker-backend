@@ -14,7 +14,7 @@ def seed_data():
         admin_user = User(
             username="Isaac Odhiambo",
             email="odhiamboisaac@gmail.com",
-            password=bcrypt.generate_password_hash("admin123").decode('utf-8'),
+            password_hash=bcrypt.generate_password_hash("admin123").decode('utf-8'),
             is_admin=True,
             is_verified=True  # Set as verified for admin access
         )
@@ -22,7 +22,7 @@ def seed_data():
         student_user = User(
             username="Odiwuor Jakababa",
             email="odiwuorisaach@gmail.com",
-            password=bcrypt.generate_password_hash("student123").decode('utf-8'),
+            password_hash=bcrypt.generate_password_hash("student123").decode('utf-8'),
             is_admin=False,
             is_verified=True  # Set as verified for normal student
         )

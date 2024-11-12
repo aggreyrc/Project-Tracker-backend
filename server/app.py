@@ -71,7 +71,8 @@ class Login(Resource):
 
             user = User.query.filter(User.username == username).first()
 
-            if user.authenticate(password):
+            # if user.authenticate(password):
+            if user and user.check_password(password):
 
                 session['user_id'] = user.id
                 return user.to_dict(), 200
@@ -109,24 +110,28 @@ class Users(Resource):
             users_query = User.query.order_by(User.id.asc())
 
             total_users = users_query.count()
-            users_paginated = User.query.paginated(page=page, per_page=per_page)
+            # users_paginated = User.query.paginated(page=page, per_page=per_page)
+            users_paginated = users_query.offset((page - 1) * per_page).limit(per_page).all()
 
+
+                
             users_list = []
-            for user in users_paginated.item:
+            for user in users_paginated:
                 user_dict = {
-                    "username":user.username,
-                    "email":user.email,
-                    "is_admin":user.is_admin,
+                    "username": user.username,
+                    "email": user.email,
+                    "is_admin": user.is_admin,
                 }
                 users_list.append(user_dict)
 
+            
             pagination_metadata = {
-                "total":total_users,
-                "pages":users_paginated.pages,
-                "page":users_paginated.page,
-                "per_page":users_paginated.per_page,
-                "has_next":users_paginated.has_next,
-                "has_prev":users_paginated.has_prev
+                "total": total_users,
+                "pages": (total_users + per_page - 1) // per_page,  # Calculate total pages
+                "page": page,
+                "per_page": per_page,
+                "has_next": page * per_page < total_users,
+                "has_prev": page > 1
             }
 
             return make_response({
@@ -148,6 +153,7 @@ class Users(Resource):
             new_user = User(
                 username = data['username'],
                 email = data['email'],
+                password = data['password'],
                 is_admin = data.get('is_admin',False),
             )
 
@@ -233,14 +239,15 @@ class Projects(Resource):
     def get(self):
         projects = Project.query.all()
         projects_list = []
-        for project in projects:
-            project_dict = {
-                "id":project.id,
-                "title":project.title,
-                "description":project.description,
-                "github_url": project.github_url,
-                "created_at": project.created_at
-            }
+        # for project in projects:
+        #     project_dict = {
+        #         "id":project.id,
+        #         "title":project.title,
+        #         "description":project.description,
+        #         "github_url": project.github_url,
+        #         "created_at": project.created_at
+        #     }
+        project_dict = [project.to_dict for project in projects]
         projects_list.append(project_dict)
         return make_response(projects_list,200)
     
@@ -308,6 +315,76 @@ class ProjectById(Resource):
             return make_response({"error": "Project not found"}, 404)
 
 api.add_resource(ProjectById, '/projects/<int:id>')
+
+# Crud actions for ProjectMember model
+
+class ProjectMemberResource(Resource):
+    # Fetching all projectmembers
+    def get(self):
+        project_members = ProjectMember.query.all()
+        return make_response([pm.to_dict() for pm in project_members], 200)
+    
+    # Creating a ProjectMember
+    def post(self):
+        data = request.get_json()
+        try:  
+            new_project_member = ProjectMember(
+                project_id=data['project_id'],
+                user_id=data['user_id'],
+                role=data['role']
+            )
+            db.session.add(new_project_member)
+            db.session.commit()
+            return make_response(new_project_member.to_dict(), 200)
+        except:
+            return make_response({"errors": ["validation errors"]}, 400)
+        
+    
+api.add_resource(ProjectMemberResource, '/project_members')
+
+class ProjectMemberById(Resource):
+    
+    # Fetching by id
+    def get(self,id):
+        project_member = ProjectMember.query.filter_by(id=id).first()
+        if project_member:
+            return make_response(project_member.to_dict(), 200)
+        else:
+            return make_response({"error": "ProjectMember not found"}, 404)
+        
+    # updating a project_member
+    def patch(self,id):
+        project_member = ProjectMember.query.filter_by(id=id).first()
+        
+        data = request.get_json()
+        
+        if project_member:
+            try:
+                for attr in data:
+                    setattr(project_member, attr, data[attr])
+                    
+                    db.session.add(project_member)
+                    db.session.commit()
+                    
+                    return make_response(project_member.to_dict(), 200)
+                
+            except ValueError:
+                return make_response({"errors": ["validation errors"]}, 400)
+        else:
+            return make_response({"error": "ProjectMember not found"}, 404)
+        
+    # Deleting a ProjectMember
+    def delete(self,id):
+        project_member = ProjectMember.query.filter_by(id=id).first()
+        if project_member:
+            db.session.delete(project_member)
+            db.session.commit()
+            
+            return make_response({"Message": "ProjectMember Deleted Successfully"}, 200)
+        else:
+            return make_response({"error": "ProjectMember not found"}, 404)
+
+api.add_resource(ProjectMemberById, '/project_members<int:id>')
             
 
 if __name__ == '__main__':

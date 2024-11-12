@@ -1,6 +1,3 @@
-
-
-
 import random
 import string
 from flask_sqlalchemy import SQLAlchemy
@@ -18,14 +15,14 @@ class User(db.Model, SerializerMixin):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
-    password = db.Column(db.String(200), nullable=False)
+    password_hash = db.Column(db.String(200), nullable=False)
     is_admin = db.Column(db.Boolean, default=False)  # True for admin, False for student
     is_verified = db.Column(db.Boolean, default=False)  # Field to track verification status
     verification_code = db.Column(db.String(6), nullable=True)  # Field to store verification code
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     # Serialization rules: excluding sensitive fields
-    serialize_rules = ('-password', '-verification_code')
+    serialize_rules = ('-password_hash', '-verification_code')
 
     def __repr__(self):
         return f"<User {self.username} (Admin: {self.is_admin}, Verified: {self.is_verified})>"
@@ -74,6 +71,14 @@ def send_verification_email(recipient_email, code):
         body=f"Your verification code is: {code}"
     )
     mail.send(msg)
+    
+# Password hashing
+def set_password(self, password):
+    self.password_hash = bcrypt.generate_password_hash(password).decode('utf-8')
+
+def check_password(self, password):
+        return bcrypt.check_password_hash(self.password_hash, password)
+    
 
 
 # Project Model
@@ -109,6 +114,9 @@ class Project(db.Model, SerializerMixin):
             raise ValueError("Description must be at least 10 characters long.")
         if not self.github_url.startswith('http'):
             raise ValueError("Invalid GitHub URL format.")
+        
+     # Specify which fields to serialize
+    serialize_rules = ('-project_members.project',)
 
 
 # Cohort Model
@@ -151,6 +159,16 @@ class ProjectMember(db.Model, SerializerMixin):
     user_id = db.Column(db.Integer, nullable=False)  # No foreign key, purely associative
     joined_at = db.Column(db.DateTime, default=datetime.utcnow)
     role = db.Column(db.String(50))  # e.g., 'Developer', 'Lead', 'Reviewer'
+    
+    # serialization rules
+    # serialize_rules = ('-project.project_members', '-user.project_members')
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'project_id': self.project_id,
+            'user_id': self.user_id,
+            'role': self.role,
+        }
 
     # Relationships
     project = db.relationship('Project', back_populates='project_members', lazy=True)  # Using back_populates
