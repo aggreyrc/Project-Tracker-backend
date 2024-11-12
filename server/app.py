@@ -253,7 +253,7 @@ class UserByID(Resource):
 
         return make_response(response_dict,200)
         
-api.add_resource(UserByID, '/user/<int:id>')  
+api.add_resource(UserByID, '/users/<int:id>')  
 
 
 
@@ -588,7 +588,7 @@ class ProjectMemberById(Resource):
 
     def get(self,id):
         
-        project_member = ProjectMember.query.filter(ProjectMember == id).first()
+        project_member = ProjectMember.query.filter(ProjectMember.id== id).first()
 
         if project_member:
             return make_response(project_member.to_dict(),200)
@@ -596,7 +596,7 @@ class ProjectMemberById(Resource):
     
     def patch(self,id):
 
-        project_member = ProjectMember.query.filter(ProjectMember == id).first()
+        project_member = ProjectMember.query.filter(ProjectMember.cohort_id == id).first()
 
         data = request.get_json()
 
@@ -610,10 +610,10 @@ class ProjectMemberById(Resource):
                     db.session.commit()
                         
                     project_member_dict = {
-                        "id":project_member.name,
-                        "name":project_member.role,
+                        "name":project_member.name,
+                        "role":project_member.role,
                         "cohort_id":project_member.cohort_id,
-                        "project_Id":project_member.cohort,
+                        "project_Id":project_member.cohort
 
                     } 
                     response = make_response(project_member_dict,200)
@@ -628,7 +628,7 @@ class ProjectMemberById(Resource):
         project_member = ProjectMember.query.filter(ProjectMember.id == id).first()
 
         if not project_member:
-            return make_response({"error":"User not found"},404)
+            return make_response({"error":"Project member not found"},404)
         
         db.session.delete(project_member)
         db.session.commit()
@@ -637,7 +637,7 @@ class ProjectMemberById(Resource):
 
         return make_response(response_dict,200)
     
-api.add_resource(ProjectMemberById, '/projectmember/<int:id>')
+api.add_resource(ProjectMemberById, '/projectmembers/<int:id>')
 
 if __name__ == '__main__':
     app.run(port=5555, debug=True)

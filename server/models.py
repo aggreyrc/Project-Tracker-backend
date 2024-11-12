@@ -34,7 +34,7 @@ class User(db.Model, SerializerMixin):
     
 
     # Serialization rules: excluding sensitive fields
-    serialize_rules = ('-password', '-verification_code',)
+    serialize_rules = ('-password', '-verification_code','-projects',)
 
     def __repr__(self):
         return f"<User {self.username} (Admin: {self.is_admin}, Verified: {self.is_verified}), Verification_code: {self.verification_code}>"
@@ -111,7 +111,7 @@ class Project(db.Model, SerializerMixin):
     github_url = db.Column(db.String(200), nullable=False)
     type = db.Column(db.String(50), nullable=False)  # project type
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    image_url = db.Column(db.String(255), nullable=True)  # New column for optional image URL
+    image_url = db.Column(db.String(255), nullable=True)  # New column for optional image URl
     
     # Foreign Keys
     user_id=db.Column(db.Integer, db.ForeignKey('users.id'),nullable=False)
@@ -124,9 +124,11 @@ class Project(db.Model, SerializerMixin):
     members = db.relationship(
         'ProjectMember',
         back_populates='project',  # Explicitly defining bidirectional relationship
-        lazy=True,
-        cascade="all, delete-orphan"
     )
+
+    #serialize
+    # serialize_rules = ('-owner.projects', '-members.project', '-cohort.projects', '-members.cohort',)
+    serialize_rules = ('-members',)
 
     def __repr__(self):
         # iterate over project member names
@@ -161,16 +163,14 @@ class Cohort(db.Model, SerializerMixin):
     projects = db.relationship(
         'Project',
         back_populates='cohort',
-        lazy=True,
-        cascade="all, delete"
     )
 
     members = db.relationship(
         'ProjectMember',
         back_populates='cohort',
-        lazy=True,
-        cascade="all, delete"
     )
+
+    serialize_rules = ('-projects.cohort', '-members.cohort', '-projects.members', '-members.project')  # Prevent recursive nesting
 
     def __repr__(self):
         return f"<Cohort {self.name} (Type: {self.type})>"
@@ -198,8 +198,11 @@ class ProjectMember(db.Model, SerializerMixin):
     cohort_id = db.Column(db.Integer, db.ForeignKey('cohorts.id'), nullable=False)
 
     # Relationships
-    project = db.relationship('Project', back_populates='members', lazy=True)  # Using back_populates
-    cohort = db.relationship('Cohort', back_populates='members', lazy=True) 
+    project = db.relationship('Project', back_populates='members')  # Using back_populates
+    cohort = db.relationship('Cohort', back_populates='members') 
+
+    # serialize_rules = ('-project.members','-cohort.members',)
+    serialize_rules = ('-members',) 
 
     def __repr__(self):
         return f"<ProjectMember (Project ID: {self.project_id}, User ID: {self.user_id}, Role: {self.role})>"
@@ -212,8 +215,7 @@ class ProjectMember(db.Model, SerializerMixin):
             'joined_at': self.joined_at.isoformat() if self.joined_at else None,
             'role': self.role,
             'user_id': self.user_id,
-            'cohort_id': self.cohort_id,
-            
+            'cohort_id': self.cohort_id
         }
     
 
