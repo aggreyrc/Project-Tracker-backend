@@ -445,10 +445,10 @@ class ProjectById(Resource):
                 for attr in data:
                     setattr(project, attr, data[attr])
                     
-                    db.session.add(project)
-                    db.session.commit()
+                db.session.add(project)
+                db.session.commit()
                     
-                    return make_response(project.to_dict(), 200)
+                return make_response(project.to_dict(), 200)
             except ValueError:
                 return make_response({"errors": ["validation errors"]}, 400)
         else:
@@ -556,7 +556,7 @@ class CohortByID(Resource):
             return make_response(cohort.to_dict(),200)
         return make_response({"error": "Cohort not found"},404)
 
-    # Updating user by ID
+    # Updating cohort by ID
     def patch(self,id):
         
         cohort = Cohort.query.filter(Cohort.id == id).first()
@@ -569,13 +569,14 @@ class CohortByID(Resource):
                 for attr in data:
                     setattr(cohort,attr,data[attr])
 
-                    db.session.add(cohort)
-                    db.session.commit()
+                db.session.add(cohort)
+                db.session.commit()
 
                 cohort_dict = {
                     "name":cohort.name,
                     "description":cohort.description,
-                    "track":cohort.track,
+                    "type":cohort.type,
+                    "end_date":cohort.end_date,
                 }  
 
                 response = make_response(cohort_dict,200)
@@ -683,7 +684,7 @@ class ProjectMemberById(Resource):
     
     def patch(self,id):
 
-        project_member = ProjectMember.query.filter(ProjectMember.cohort_id == id).first()
+        project_member = ProjectMember.query.filter(ProjectMember.id == id).first()
 
         data = request.get_json()
 
@@ -693,19 +694,20 @@ class ProjectMemberById(Resource):
                 for attr in data:
                     setattr(project_member, attr, data[attr])
 
-                    db.session.add(project_member)
-                    db.session.commit()
+                db.session.add(project_member)
+                db.session.commit()
                         
-                    project_member_dict = {
+                project_member_dict = {
                         "name":project_member.name,
                         "role":project_member.role,
                         "cohort_id":project_member.cohort_id,
-                        "project_Id":project_member.cohort
+                        "project_id":project_member.project_id,
+                        
 
-                    } 
-                    response = make_response(project_member_dict,200)
+                } 
+                response = make_response(project_member_dict,200)
                     
-                    return response   
+                return response   
 
             except ValueError:
                 return make_response({"error":["validation errors"]},400) 

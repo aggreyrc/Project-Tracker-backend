@@ -30,7 +30,7 @@ class User(db.Model, SerializerMixin):
     role = db.Column(db.String(20), nullable=False)
 
     # relationship between user"owner" and project
-    projects = db.relationship('Project', back_populates='owner',cascade="all,delete-orphan")
+    projects = db.relationship('Project', back_populates='owner',passive_deletes=True)
     
 
     # Serialization rules: excluding sensitive fields
@@ -115,7 +115,7 @@ class Project(db.Model, SerializerMixin):
     
     # Foreign Keys
     user_id=db.Column(db.Integer, db.ForeignKey('users.id'),nullable=False)
-    cohort_id = db.Column(db.Integer, db.ForeignKey('cohorts.id', ondelete='CASCADE'), nullable=False)
+    cohort_id = db.Column(db.Integer, db.ForeignKey('cohorts.id', ondelete='SET NULL'), nullable=True)
 
 
     # Relationships
@@ -124,6 +124,7 @@ class Project(db.Model, SerializerMixin):
     members = db.relationship(
         'ProjectMember',
         back_populates='project',  # Explicitly defining bidirectional relationship
+        passive_deletes=True  #allows to delete user
     )
 
     #serialize
@@ -198,7 +199,7 @@ class ProjectMember(db.Model, SerializerMixin):
 
     # Foreign key
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'),nullable=False) 
-    cohort_id = db.Column(db.Integer, db.ForeignKey('cohorts.id'), nullable=False)
+    cohort_id = db.Column(db.Integer, db.ForeignKey('cohorts.id'), nullable=True)
 
     # Relationships
     project = db.relationship('Project', back_populates='members')  # Using back_populates
