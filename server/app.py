@@ -5,11 +5,13 @@ load_dotenv()
 
 import random
 import string
+from datetime import datetime
 
-from flask import request, make_response, session, Flask
+from flask import request, make_response, session, Flask,jsonify
 from flask_migrate import Migrate
 from flask_restful import Resource,Api
 from flask_cors import CORS
+from sqlalchemy.exc import IntegrityError
 
 from models import User,Project,Cohort, ProjectMember, db,bcrypt, mail,Message
 import os
@@ -91,10 +93,7 @@ class Signup(Resource):
         if is_admin and role != 'admin':
             return {'error': 'Only users with an admin role can be set as admin'}
         
-        # Generate a verification code (for example, a 6-character alphanumeric code)
-        # verification_code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
         
-
         # Creating new user
         new_user = User(
             username=username,
@@ -236,6 +235,7 @@ class UserByID(Resource):
         if user:
             return make_response(user.to_dict(),200)
         return make_response({"error":"User not found"},404)
+    
 
     # Updating a user using their id
     def patch(self,id):
@@ -250,19 +250,19 @@ class UserByID(Resource):
                 for attr in data:
                     setattr(user, attr, data[attr])
 
-                    db.session.add(user)
-                    db.session.commit()
+                db.session.add(user)
+                db.session.commit()
 
-                    user_dict = {
-                        "username":user.username,
-                        "email":user.email,
-                        "password":user.password,
-                        "is_admin":user.is_admin,
-                    }
+                user_dict = {
+                    "username":user.username,
+                    "email":user.email,
+                    "is_admin":user.is_admin,
+                    "role":user.role
+                }
 
-                    response = make_response(user_dict,200)
+                response = make_response(user_dict,200)
 
-                    return response
+                return response
                 
             except ValueError:
                 return make_response({"errors": ["validation errors"]},400)
@@ -285,8 +285,35 @@ class UserByID(Resource):
         response_dict = {"Message": "User successfully deleted"}
 
         return make_response(response_dict,200)
+    
+
+    # For changing password alone
+    def change_password(self, id):
+
+        user = User.query.get(id)
+        
+        if not user:
+            return make_response({"error": "User not found"}, 404)
+
+        data = request.get_json()
+        
+        old_password = data.get('old_password')
+        new_password = data.get('new_password')
+
+        if not user.check_password_hash(old_password):
+            return make_response({"error": "Invalid old password"}, 401)
+
+        try:
+            user.set_password_hash(new_password)
+            db.session.commit()
+            return make_response({"message": "Password changed successfully"}, 200)
+        
+        except Exception as e:
+            db.session.rollback()
+            return make_response({"error": str(e)}, 500)
         
 api.add_resource(UserByID, '/users/<int:id>')  
+api.add_resource(UserByID, '/users/<int:id>/change-password', endpoint='user_change_password')
 
 
 
@@ -349,21 +376,41 @@ class Projects(Resource):
     def post(self):
         try:
             data = request.get_json()
+            print(f"Received data: {data}")  # For debugging
+            
+            # Ensure required fields are present
+            if not all(key in data for key in ['name', 'description', 'github_url', 'type', 'cohort_id']):
+                raise ValueError("Missing required fields")
+            
+            # Get user_id from session or request
+            user_id = session.get('user_id')  # Or extract from request if necessary
+            
+            if not user_id:
+                return make_response({"error": "User not authenticated"}, 401)  # or handle differently if needed
+
             new_project = Project(
                 name=data['name'],
                 description=data['description'],
                 github_url=data['github_url'],
                 type = data['type'],
                 cohort_id = data['cohort_id'],
-                # created_at=data['created_at'],
+                user_id=user_id,
+                created_at=datetime.utcnow(),
+                image_url=data['image_url']
             )
 
             new_project.validate()
             db.session.add(new_project)
             db.session.commit()
             return make_response(new_project.to_dict(), 201)
-        except:
-            return make_response({"error": "Invalid data"}, 400)
+        
+        except ValueError as e:
+            print(f"Validation error: {e}")  # Log validation error message
+            return make_response({"error": str(e)}, 400)  # Return the validation error message to the client
+        
+        except Exception as e:
+             print(f"Unexpected error: {e}")  # Log any other unexpected errors
+             return make_response({"error": "Invalid data"}, 400)  # Return a generic error
         
 api.add_resource(Projects, '/projects')
 
@@ -478,19 +525,23 @@ class Cohorts(Resource):
 
             new_cohort = Cohort(
                 name=data['name'],
-                description = data['description'],
-                type = data['type'],
-
+                description=data['description'],
+                github_url=data['github_url'],
+                type=data['type'],
+                start_date=datetime.utcnow(),
+                end_date=data['end_date']
             )
 
             db.session.add(new_cohort)
             db.session.commit()
 
-            return make_response(new_cohort.to_dict(),201)
+            return make_response(
+                new_cohort.to_dict(),201
+            )
         
         except:
-            return make_response({"errors":["validation errors"]}),403
-
+            return make_response({"errors": ["validation errors"]},403)
+ 
 api.add_resource(Cohorts, '/cohorts')   
 
 # cohort by ID
@@ -602,14 +653,17 @@ class ProjectMembers(Resource):
                 name = data['name'],
                 role = data['role'],
                 cohort_id = data['cohort_id'],
-                project_id = data['project_id']
+                project_id = data['project_id'],
+                user_id = data['user_id']
 
             )
             db.session.add(new_project_member)
             db.session.commit()
 
-            return make_response(new_project_member.to_dict(),201)
-        
+            return make_response(
+                jsonify(new_project_member.to_dict()),201
+            )
+
         except:
             return make_response({"errors":["validation errors"]}),403
 

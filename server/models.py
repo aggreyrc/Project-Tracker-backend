@@ -156,8 +156,8 @@ class Cohort(db.Model, SerializerMixin):
     description = db.Column(db.String(50), nullable=False)
     github_url = db.Column(db.String(50), nullable=False)
     type = db.Column(db.String(50), nullable=False)
-    start_date = db.Column(db.DateTime, nullable=False)
-    end_date = db.Column(db.DateTime, nullable=False)
+    start_date = db.Column(db.DateTime, default=datetime.utcnow)
+    end_date = db.Column(db.String, nullable=False)
 
     # Relationship with Project
     projects = db.relationship(
@@ -174,6 +174,7 @@ class Cohort(db.Model, SerializerMixin):
 
     def __repr__(self):
         return f"<Cohort {self.name} (Type: {self.type})>"
+    
 
     # Validators
     def validate(self):
@@ -181,6 +182,8 @@ class Cohort(db.Model, SerializerMixin):
             raise ValueError("Cohort name must be at least 3 characters long.")
         if not self.github_url.startswith('http'):
             raise ValueError("Invalid GitHub URL format.")
+
+
 
 
 # ProjectMember Model - Join table for Many-to-Many relationship between Projects and Users
