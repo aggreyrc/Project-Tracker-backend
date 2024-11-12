@@ -3,6 +3,9 @@
 from dotenv import load_dotenv
 load_dotenv()
 
+import random
+import string
+
 from flask import request, make_response, session, Flask
 from flask_migrate import Migrate
 from flask_restful import Resource,Api
@@ -63,27 +66,57 @@ class Signup(Resource):
     
     def post(self):
 
-        username  = request.get_json().get('username')
-        password = request.get_json().get('password')
+        data = request.get_json()  # Call get_json() once and store the result in `data`
 
-        if not username or not password:
-            return {'error':'Username and password required'},400
+        username = data.get('username')
+        password = data.get('password')
+        email = data.get('email')
+        role = data.get('role')
+        is_admin = data.get('is_admin', False)  # Provide a default value for is_admin
+
+        
+        if not username or not password or not email or not role:
+            return {'error':'Username, email, password and role required'},400
         
         # checking if username exits
         existing_user =User.query.filter_by(username=username).first()
         if existing_user:
             return {'error':'Username already taken'},409
         
+        # checking if email exists
+        existing_email = User.query.filter_by(email=email).first()
+        if existing_email:
+            return {'error': 'Email already registered'},409
+        
+        if is_admin and role != 'admin':
+            return {'error': 'Only users with an admin role can be set as admin'}
+        
+        # Generate a verification code (for example, a 6-character alphanumeric code)
+        # verification_code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+        
+
         # Creating new user
-        new_user = User(username=username)
+        new_user = User(
+            username=username,
+            email=email,
+            role=role,
+            is_admin=is_admin,
+            is_verified=False,
+            # verification_code=verification_code
+
+        )
         new_user.set_password_hash(password)
+
+        # Generate and save the verification code in the database
+        new_user.generate_verification_code()
+
 
         db.session.add(new_user)
         db.session.commit()
 
         session['user_id'] = new_user.id
 
-        return {'message':'User created successfully'},201
+        return {'message':'User created successfully. Please verify your email with the verification code.'},201
         
 api.add_resource(Signup, '/signup', endpoint='signup')
 
