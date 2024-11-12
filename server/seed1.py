@@ -37,15 +37,18 @@ def seed_data():
                 email=email,
                 password_hash=password_hash,
                 is_admin=is_admin,
-                is_verified=True
+                is_verified=True,
+                
             )
     
             # Assign role
             user.role = "admin" if user.is_admin else "student"
+
+            # Generate a verification code for each user
+            user.generate_verification_code()  # Assuming this method sets the code on the user model
     
             db.session.add(user)
 
-        #  Commit the users to the database after the loop to avoid committing multiple times
         db.session.commit()
  
       
@@ -75,7 +78,8 @@ def seed_data():
         projects =[]
         project_types = ["Web Development", "Mobile App", "Machine Learning"]
         
-        for cohort in cohorts[:15]:  # Only create 15 projects
+        for _ in range(25):
+            cohort = random.choice(cohorts)
             project_name = fake.company()
             project_description = fake.text()
             project_type = random.choice(project_types)
@@ -99,7 +103,7 @@ def seed_data():
         users = User.query.all()
 
         for project in projects:  # Assuming projects is a list of created projects
-           for _ in range(3):  # Add 3 members to each project (adjust number as needed)
+           for _ in range(5):  # Add 3 members to each project (adjust number as needed)
                user = random.choice(users)  # Select a random user from the list of users
                member_name = fake.name()
                member_role = fake.job()

@@ -165,7 +165,8 @@ class Users(Resource):
                     "username":user.username,
                     "email":user.email,
                     "is_admin":user.is_admin,
-                    "role":user.role
+                    "role":user.role,
+                    "verification_code":user.verification_code
                 }
                 users_list.append(user_dict)
 
@@ -283,6 +284,7 @@ class Projects(Resource):
                 members_list = [{'id': member.id, 'name': member.name, 'role': member.role} for member in project.members]
 
                 project_dict = {
+                    "id":project.id,
                     "name":project.name,
                     "description":project.description,
                     "github_url":project.github_url,
@@ -396,13 +398,27 @@ class Cohorts(Resource):
 
              cohorts_list = []
              for cohort in cohorts_paginated.items:
+                 
+                #  project member belongs to a cohort
+                 members_list = []
+                 for member in cohort.members:
+                     member_data = {
+                         "name": member.name,
+                         "role": member.role,
+                        
+                     }
+                     members_list.append(member_data)
+
                  cohort_dict = {
                      "name":cohort.name,
                      "description":cohort.description,
                      "type":cohort.type,
+                     "start_date":cohort.start_date,
+                     "end_date":cohort.end_date,
+                     "members":members_list,
+                    
                  }
-
-             cohorts_list.append(cohort_dict)     
+                 cohorts_list.append(cohort_dict)     
 
              pagination_metadata = {
                 "total": total_cohorts,
@@ -570,9 +586,58 @@ api.add_resource(ProjectMembers, '/projectmembers')
 
 class ProjectMemberById(Resource):
 
-    pass
+    def get(self,id):
+        
+        project_member = ProjectMember.query.filter(ProjectMember == id).first()
 
+        if project_member:
+            return make_response(project_member.to_dict(),200)
+        return make_response({"error":"Project member not found"},404)
+    
+    def patch(self,id):
 
+        project_member = ProjectMember.query.filter(ProjectMember == id).first()
+
+        data = request.get_json()
+
+        if project_member:
+
+            try:
+                for attr in data:
+                    setattr(project_member, attr, data[attr])
+
+                    db.session.add(project_member)
+                    db.session.commit()
+                        
+                    project_member_dict = {
+                        "id":project_member.name,
+                        "name":project_member.role,
+                        "cohort_id":project_member.cohort_id,
+                        "project_Id":project_member.cohort,
+
+                    } 
+                    response = make_response(project_member_dict,200)
+                    
+                    return response   
+
+            except ValueError:
+                return make_response({"error":["validation errors"]},400) 
+
+    def delete(self,id):
+        
+        project_member = ProjectMember.query.filter(ProjectMember.id == id).first()
+
+        if not project_member:
+            return make_response({"error":"User not found"},404)
+        
+        db.session.delete(project_member)
+        db.session.commit()
+
+        response_dict = {"Message":"Project member successfully deleted"}
+
+        return make_response(response_dict,200)
+    
+api.add_resource(ProjectMemberById, '/projectmember/<int:id>')
 
 if __name__ == '__main__':
     app.run(port=5555, debug=True)
