@@ -739,4 +739,5 @@ class ProjectMemberById(Resource):
 api.add_resource(ProjectMemberById, '/projectmembers/<int:id>')
 
 if __name__ == '__main__':
-    app.run(port=5555, debug=True)
+    port = int(os.environ)
+    app.run(port=5000, debug=True)
