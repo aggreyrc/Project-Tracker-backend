@@ -737,7 +737,12 @@ class ProjectMemberById(Resource):
         return make_response(response_dict,200)
     
 api.add_resource(ProjectMemberById, '/projectmembers/<int:id>')
-
+port = int(os.environ.get("PORT", 5555))
 if __name__ == '__main__':
+<<<<<<< HEAD
     port = int(os.environ)
     app.run(port=5000, debug=True)
+=======
+   # port = int(os.environ.get("PORT", 5555))
+   app.run(host="0.0.0.0", port=port)
+>>>>>>> f5fbaa2fc15ec854d4a69df5afb6a6baa6bb643c
