@@ -54,6 +54,7 @@ class Home(Resource):
                    "/projects",
                    "/cohorts",
                    "/projectmembers",
+                   "/verify"
                    "/signup",
                    "/login",
                    "/logout",
@@ -103,7 +104,6 @@ class Signup(Resource):
             role=role,
             is_admin=is_admin,
             is_verified=False,
-           
 
         )
         new_user.set_password_hash(password)
@@ -122,6 +122,39 @@ class Signup(Resource):
         return {'message':'User created successfully. Please verify your email with the verification code.'},201
         
 api.add_resource(Signup, '/signup', endpoint='signup')
+
+
+# For code verification
+class Verify(Resource):
+    
+    def post(self):
+        data = request.get_json()
+
+        email = data.get('email')
+        verification_code = data.get('verification_code')
+
+        if not email or not verification_code:
+            return {'error': 'Email and verification code are required'}, 400
+
+        # Find the user by email
+        user = User.query.filter_by(email=email).first()
+
+        if not user:
+            return {'error': 'User not found'}, 404
+        
+        # Check if the verification code matches
+        if user.verification_code != verification_code:
+            return {'error': 'Invalid verification code'}, 400
+
+        # Mark the user as verified
+        user.is_verified = True
+        
+        # Commit changes to the database
+        db.session.commit()
+
+        return {'message': 'Email successfully verified. You can now log in.'}, 200
+
+api.add_resource(Verify, '/verify', endpoint='verify')
 
 
 # Staying logged in
@@ -145,14 +178,19 @@ api.add_resource(CheckSession, '/check_session', endpoint='checks_session')
 class Login(Resource):
         
         def post(self):
-     
-            username = request.get_json().get('username')
-            password = request.get_json().get('password')
 
-            user = User.query.filter(User.username == username).first()
+            data = request.get_json()
+     
+            email = data.get('email')
+            password = data.get('password')
+
+            user = User.query.filter(User.email == email).first()
 
             if not user or not user.check_password_hash(password):
                 return {'error':'Invalid credentials'},401
+            
+            if not user.is_verified:
+                return {'error':"User is not verified. Please check you email for the verification code"},400
             
             session['user_id'] = user.id
             return {'message': 'Logged in successfully'},200

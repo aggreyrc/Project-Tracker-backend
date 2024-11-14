@@ -45,7 +45,7 @@ class User(db.Model, SerializerMixin):
         self.password_hash = bcrypt.generate_password_hash(password).decode('utf-8')
 
     def check_password_hash(self, password):
-        return bcrypt.check_password_hash(self.password, password)
+        return bcrypt.check_password_hash(self.password_hash, password)
     
 
     # Generate a random 6-digit verification code
