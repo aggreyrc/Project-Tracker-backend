@@ -15,6 +15,7 @@ from sqlalchemy.exc import IntegrityError
 
 from models import User,Project,Cohort, ProjectMember, db,bcrypt, mail,Message,send_verification_email
 import os
+print(os.getenv('MAIL_USERNAME'))
 
 app = Flask(__name__)
 
@@ -25,7 +26,7 @@ app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 app.json.compact = False
 
 # Flask-Mail Configuration
-app.config['MAIL_SERVER'] = 'smtp.mail.yahoo.com'
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USE_SSL'] = False
@@ -771,4 +772,4 @@ class ProjectMemberById(Resource):
 api.add_resource(ProjectMemberById, '/projectmembers/<int:id>')
 
 if __name__ == '__main__':
-    app.run(port=5555, debug=True)
+    app.run(port=5556, debug=True)

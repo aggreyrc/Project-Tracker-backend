@@ -7,6 +7,10 @@ from datetime import datetime
 from sqlalchemy.exc import IntegrityError
 from flask_mail import Mail, Message
 from sqlalchemy_serializer import SerializerMixin
+from dotenv import load_dotenv
+load_dotenv()
+
+import os
 
 
 db =SQLAlchemy()
@@ -91,14 +95,18 @@ class User(db.Model, SerializerMixin):
 
 # Function to send the verification email
 def send_verification_email(recipient_email, code):
-    msg = Message(
-        subject="Your Verification Code",
-        sender="onyangomonalisa@yahoo.co.uk",  # Replace with your actual sender email
-        recipients=[recipient_email],
-        body=f"Your verification code is: {code}"
-       )
-    print(f"Sending verification code{code} to {recipient_email}")
-    mail.send(msg)
+
+    try:
+        msg = Message(
+            subject="Your Verification Code",
+            sender=os.getenv('MAIL_USERNAME'),  # Replace with your actual sender email
+            recipients=[recipient_email],
+            body=f"Your verification code is: {code}"
+        )
+        print(f"Sending verification code {code} to {recipient_email}")
+        mail.send(msg)
+    except Exception as e:
+        print(f"Error sending email: {e}")
 
 
 # Project Model
