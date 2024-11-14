@@ -41,13 +41,13 @@ api = Api(app)
 
 
 # Authentication Decorator
-def login_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if 'user_id' not in session:
-            return make_response({"error": "Authentication required"}, 401)
-        return f(*args, **kwargs)
-    return decorated_function
+# def login_required(f):
+#     @wraps(f)
+#     def decorated_function(*args, **kwargs):
+#         if 'user_id' not in session:
+#             return make_response({"error": "Authentication required"}, 401)
+#         return f(*args, **kwargs)
+#     return decorated_function
 
 # Home page....................................................................
 class Home(Resource):
@@ -134,7 +134,7 @@ api.add_resource(Signup, '/signup', endpoint='signup')
 # Staying logged in
 class CheckSession(Resource):
     
-    @login_required
+    # @login_required
     def get(self):
 
         if 'user_id' in session:
@@ -185,7 +185,7 @@ api.add_resource(Logout,'/logout', endpoint='logout')
 class Users(Resource):
 
     # fetching all the users
-    @login_required
+    # @login_required
     def get(self):
 
         try: 
@@ -242,7 +242,7 @@ api.add_resource(Users, '/users')
 class UserByID(Resource):
 
     # Fetching a user by id
-    @login_required
+    # @login_required
     def get(self,id):
         user = User.query.filter(User.id == id).first()
 
@@ -287,7 +287,7 @@ class UserByID(Resource):
 
 
     # Deleting a user by their ID
-    @login_required
+    # @login_required
     def delete(self,id):
 
         user =  User.query.filter(User.id == id).first()
@@ -338,7 +338,7 @@ api.add_resource(UserByID, '/users/<int:id>/change-password', endpoint='user_cha
 class Projects(Resource):
     
     # Fetching all projects
-    @login_required
+    # @login_required
     def get(self):
 
         try:
