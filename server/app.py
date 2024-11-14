@@ -252,7 +252,7 @@ class UserByID(Resource):
     
 
     # Updating a user using their id
-    @login_required
+    # @login_required
     def patch(self,id):
         
         user = User.query.filter(User.id == id).first()
