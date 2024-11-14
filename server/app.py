@@ -13,7 +13,7 @@ from flask_restful import Resource,Api
 from flask_cors import CORS
 from sqlalchemy.exc import IntegrityError
 
-from models import User,Project,Cohort, ProjectMember, db,bcrypt, mail,Message
+from models import User,Project,Cohort, ProjectMember, db,bcrypt, mail,Message,send_verification_email
 import os
 
 app = Flask(__name__)
@@ -25,11 +25,13 @@ app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 app.json.compact = False
 
 # Flask-Mail Configuration
-app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER', 'smtp.example.com')
-app.config['MAIL_PORT'] = int(os.getenv('MAIL_PORT', 587))
+app.config['MAIL_SERVER'] = 'smtp.mail.yahoo.com'
+app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME', 'your_email@example.com')
-app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD', 'your_email_password')
+app.config['MAIL_USE_SSL'] = False
+app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')  # Loads from .env
+app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')  # Loads from .env
+app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_USERNAME')  # Default sender
 
 CORS(app)
 migrate = Migrate(app, db)
@@ -91,7 +93,7 @@ class Signup(Resource):
             return {'error': 'Email already registered'},409
         
         if is_admin and role != 'admin':
-            return {'error': 'Only users with an admin role can be set as admin'}
+            return {'error': 'Only users with an admin role can be set as admin'},400
         
         
         # Creating new user
@@ -101,7 +103,7 @@ class Signup(Resource):
             role=role,
             is_admin=is_admin,
             is_verified=False,
-            # verification_code=verification_code
+           
 
         )
         new_user.set_password_hash(password)
@@ -109,7 +111,9 @@ class Signup(Resource):
         # Generate and save the verification code in the database
         new_user.generate_verification_code()
 
+        send_verification_email(new_user.email, new_user.verification_code)
 
+        
         db.session.add(new_user)
         db.session.commit()
 

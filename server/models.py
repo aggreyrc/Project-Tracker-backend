@@ -93,7 +93,7 @@ class User(db.Model, SerializerMixin):
 def send_verification_email(recipient_email, code):
     msg = Message(
         subject="Your Verification Code",
-        sender="yourapp@example.com",  # Replace with your actual sender email
+        sender="onyangomonalisa@yahoo.co.uk",  # Replace with your actual sender email
         recipients=[recipient_email],
         body=f"Your verification code is: {code}"
        )
