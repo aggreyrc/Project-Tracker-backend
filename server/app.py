@@ -120,7 +120,21 @@ class Signup(Resource):
 
         session['user_id'] = new_user.id
 
-        return {'message':'User created successfully. Please verify your email with the verification code.'},201
+        new_user_data = {
+            "id": new_user.id,
+            "username": new_user.username,
+            "email": new_user.email,
+            "role": new_user.role,
+            "is_admin": new_user.is_admin,
+            "is_verified": new_user.is_verified
+        }
+
+        return {
+            'message': 'User created successfully. Please verify your email with the verification code.',
+            'user': new_user_data  
+        }, 201
+
+       
         
 api.add_resource(Signup, '/signup', endpoint='signup')
 
@@ -142,6 +156,9 @@ class Verify(Resource):
 
         if not user:
             return {'error': 'User not found'}, 404
+        
+         # Debugging: Print the expected and received verification codes
+        print(f"Expected: {user.verification_code}, Received: {verification_code}")
         
         # Check if the verification code matches
         if user.verification_code != verification_code:
@@ -181,6 +198,9 @@ class Login(Resource):
         def post(self):
 
             data = request.get_json()
+
+            if not data:
+              return {'error': 'Invalid JSON format'}, 400
      
             email = data.get('email')
             password = data.get('password')
@@ -190,8 +210,8 @@ class Login(Resource):
             if not user or not user.check_password_hash(password):
                 return {'error':'Invalid credentials'},401
             
-            if not user.is_verified:
-                return {'error':"User is not verified. Please check you email for the verification code"},400
+            # if not user.is_verified:
+            #     return {'error':"User is not verified. Please check you email for the verification code"},400
             
             session['user_id'] = user.id
             return {'message': 'Logged in successfully'},200
@@ -772,4 +792,4 @@ class ProjectMemberById(Resource):
 api.add_resource(ProjectMemberById, '/projectmembers/<int:id>')
 
 if __name__ == '__main__':
-    app.run(port=5556, debug=True)
+    app.run(port=5555, debug=True)
