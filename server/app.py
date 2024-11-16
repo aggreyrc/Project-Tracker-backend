@@ -3,15 +3,12 @@
 from dotenv import load_dotenv
 load_dotenv()
 
-import random
-import string
 from datetime import datetime
 
 from flask import request, make_response, session, Flask,jsonify
 from flask_migrate import Migrate
 from flask_restful import Resource,Api
 from flask_cors import CORS
-from sqlalchemy.exc import IntegrityError
 
 from models import User,Project,Cohort, ProjectMember, db,bcrypt, mail,Message,send_verification_email
 import os
