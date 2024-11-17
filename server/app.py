@@ -3,18 +3,16 @@
 from dotenv import load_dotenv
 load_dotenv()
 
-import random
-import string
 from datetime import datetime
 
 from flask import request, make_response, session, Flask,jsonify
 from flask_migrate import Migrate
 from flask_restful import Resource,Api
 from flask_cors import CORS
-from sqlalchemy.exc import IntegrityError
 
-from models import User,Project,Cohort, ProjectMember, db,bcrypt, mail,Message
+from models import User,Project,Cohort, ProjectMember, db,bcrypt, mail,Message,send_verification_email
 import os
+print(os.getenv('MAIL_USERNAME'))
 
 app = Flask(__name__)
 
@@ -25,11 +23,13 @@ app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 app.json.compact = False
 
 # Flask-Mail Configuration
-app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER', 'smtp.example.com')
-app.config['MAIL_PORT'] = int(os.getenv('MAIL_PORT', 587))
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME', 'your_email@example.com')
-app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD', 'your_email_password')
+app.config['MAIL_USE_SSL'] = False
+app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')  # Loads from .env
+app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')  # Loads from .env
+app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_USERNAME')  # Default sender
 
 CORS(app)
 migrate = Migrate(app, db)
@@ -52,6 +52,7 @@ class Home(Resource):
                    "/projects",
                    "/cohorts",
                    "/projectmembers",
+                   "/verify"
                    "/signup",
                    "/login",
                    "/logout",
@@ -91,7 +92,7 @@ class Signup(Resource):
             return {'error': 'Email already registered'},409
         
         if is_admin and role != 'admin':
-            return {'error': 'Only users with an admin role can be set as admin'}
+            return {'error': 'Only users with an admin role can be set as admin'},400
         
         
         # Creating new user
@@ -101,7 +102,6 @@ class Signup(Resource):
             role=role,
             is_admin=is_admin,
             is_verified=False,
-            # verification_code=verification_code
 
         )
         new_user.set_password_hash(password)
@@ -109,15 +109,67 @@ class Signup(Resource):
         # Generate and save the verification code in the database
         new_user.generate_verification_code()
 
+        send_verification_email(new_user.email, new_user.verification_code)
 
+        
         db.session.add(new_user)
         db.session.commit()
 
         session['user_id'] = new_user.id
 
-        return {'message':'User created successfully. Please verify your email with the verification code.'},201
+        new_user_data = {
+            "id": new_user.id,
+            "username": new_user.username,
+            "email": new_user.email,
+            "role": new_user.role,
+            "is_admin": new_user.is_admin,
+            "is_verified": new_user.is_verified
+        }
+
+        return {
+            'message': 'User created successfully. Please verify your email with the verification code.',
+            'user': new_user_data  
+        }, 201
+
+       
         
 api.add_resource(Signup, '/signup', endpoint='signup')
+
+
+# For code verification
+class Verify(Resource):
+    
+    def post(self):
+        data = request.get_json()
+
+        email = data.get('email')
+        verification_code = data.get('verification_code')
+
+        if not email or not verification_code:
+            return {'error': 'Email and verification code are required'}, 400
+
+        # Find the user by email
+        user = User.query.filter_by(email=email).first()
+
+        if not user:
+            return {'error': 'User not found'}, 404
+        
+         # Debugging: Print the expected and received verification codes
+        print(f"Expected: {user.verification_code}, Received: {verification_code}")
+        
+        # Check if the verification code matches
+        if user.verification_code != verification_code:
+            return {'error': 'Invalid verification code'}, 400
+
+        # Mark the user as verified
+        user.is_verified = True
+        
+        # Commit changes to the database
+        db.session.commit()
+
+        return {'message': 'Email successfully verified. You can now log in.'}, 200
+
+api.add_resource(Verify, '/verify', endpoint='verify')
 
 
 # Staying logged in
@@ -141,14 +193,22 @@ api.add_resource(CheckSession, '/check_session', endpoint='checks_session')
 class Login(Resource):
         
         def post(self):
-     
-            username = request.get_json().get('username')
-            password = request.get_json().get('password')
 
-            user = User.query.filter(User.username == username).first()
+            data = request.get_json()
+
+            if not data:
+              return {'error': 'Invalid JSON format'}, 400
+     
+            email = data.get('email')
+            password = data.get('password')
+
+            user = User.query.filter(User.email == email).first()
 
             if not user or not user.check_password_hash(password):
                 return {'error':'Invalid credentials'},401
+            
+            # if not user.is_verified:
+            #     return {'error':"User is not verified. Please check you email for the verification code"},400
             
             session['user_id'] = user.id
             return {'message': 'Logged in successfully'},200
