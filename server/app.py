@@ -10,6 +10,7 @@ from flask_migrate import Migrate
 from flask_restful import Resource,Api
 from flask_cors import CORS
 
+
 from models import User,Project,Cohort, ProjectMember, db,bcrypt, mail,Message,send_verification_email
 import os
 print(os.getenv('MAIL_USERNAME'))
@@ -31,7 +32,7 @@ app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')  # Loads from .env
 app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')  # Loads from .env
 app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_USERNAME')  # Default sender
 
-CORS(app)
+CORS(app, supports_credentials=True)
 migrate = Migrate(app, db)
 db.init_app(app)
 bcrypt.init_app(app)
@@ -46,7 +47,7 @@ class Home(Resource):
           return {
                "message": " 🗂️ Welcome to the Project Tracker API 🗂️",
                "api-version": "vi",
-               "description": "Project tracker",
+               "description": "Manage and track your projects efficiently!",
                "available_endpoints": [
                    "/users",
                    "/projects",
@@ -57,6 +58,7 @@ class Home(Resource):
                    "/login",
                    "/logout",
                    "/check_session"
+
                ]
           },200
 
@@ -204,14 +206,26 @@ class Login(Resource):
 
             user = User.query.filter(User.email == email).first()
 
+            if not user:
+                return {'error': 'User not found'}, 401
+
             if not user or not user.check_password_hash(password):
                 return {'error':'Invalid credentials'},401
             
-            # if not user.is_verified:
-            #     return {'error':"User is not verified. Please check you email for the verification code"},400
+            if not user.is_verified:
+                return {'error':"User is not verified. Please check you email for the verification code"},400
+            
             
             session['user_id'] = user.id
-            return {'message': 'Logged in successfully'},200
+            return {
+                    'message': 'Logged in successfully', 
+                    'user': {
+                        'name':user.username,
+                        'email': user.email, 
+                        'is_verified': user.is_verified, 
+                        'role':user.role
+                        } 
+                    },200
         
         
 api.add_resource(Login, '/login', endpoint='login')
@@ -237,7 +251,7 @@ class Users(Resource):
 
         try: 
             page = int(request.args.get('page',1)) #defaults to page number 1
-            per_page = int(request.args.get('per_page',10)) #defaults to listing 10 users per page
+            per_page = int(request.args.get('per_page',20)) #defaults to listing 10 users per page
 
             # Limit maximum users per page
             per_page = min(per_page,100)
@@ -387,7 +401,7 @@ class Projects(Resource):
         try:
 
             page = int(request.args.get('page',1))
-            per_page = int(request.args.get('per_page',10))
+            per_page = int(request.args.get('per_page',20))
 
             per_page = min(per_page,100)
 
@@ -526,7 +540,7 @@ class Cohorts(Resource):
          try:
             # setting default page and cohort listing per page
              page = int(request.args.get('page',1))
-             per_page = int(request.args.get('per_page',10))
+             per_page = int(request.args.get('per_page',20))
 
              per_page = min(per_page, 100)
 
@@ -675,7 +689,7 @@ class ProjectMembers(Resource):
         try:
         
             page = int(request.args.get('page',1))
-            per_page = int(request.args.get('per_page',10))
+            per_page = int(request.args.get('per_page',20))
 
             per_page = min(per_page,100)
 
