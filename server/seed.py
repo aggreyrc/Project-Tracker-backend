@@ -1,166 +1,147 @@
-# from config import db, bcrypt, app  # Import the app from your config file
+from faker import Faker
+from datetime import datetime, timedelta, timezone
+import random
 from models import User, Project, Cohort, ProjectMember,db,bcrypt
-from datetime import datetime, timedelta,timezone
 from app import app
 
-
 def seed_data():
+    # Initialize Faker
+    fake = Faker()
+
     # Creating the application context
     with app.app_context():
         # Clear existing data
         db.drop_all()
         db.create_all()
 
-        # Creating sample users
-        print('\nADDING USERS...')
-        admin_user = User(
-            username="Isaac Odhiambo",
-            email="odhiamboisaac@gmail.com",
-            password_hash=bcrypt.generate_password_hash("admin123").decode('utf-8'),
-            is_admin=True,
-            is_verified=True, # Set as verified for admin access
-            role="admin"
-        )
-
-        student_user = User(
-            username="Odiwuor Jakababa",
-            email="odiwuorisaach@gmail.com",
-            password_hash=bcrypt.generate_password_hash("student123").decode('utf-8'),
-            is_admin=False,
-            is_verified=True,  # Set as verified for normal student
-            role="student"
-        )
-
-        # Adding users to the session
-        db.session.add(admin_user)
-        db.session.add(student_user)
-        db.session.commit()
-
-        # Debugging verification code
-        print('\nDebugging user code...')
-        admin_verification_code = admin_user.generate_verification_code()
-        print(admin_verification_code)
-
-        student_verification_code = student_user.generate_verification_code()
-        print(student_verification_code)
-
-
-        # Creating sample cohorts
-        print('\nADDING COHORTS...')
-        cohort1 = Cohort(
-            name="Cohort 2024",
-            description="This is the 2024 cohort.",
-            github_url="https://github.com/example/cohort2024",
-            type="Full Stack Development",
-            start_date=datetime(2024, 1, 1),
-            end_date=datetime(2024, 12, 31)
-        )
-
-        cohort2 = Cohort(
-            name="Cohort 2025",
-            description="This is the 2025 cohort.",
-            github_url="https://github.com/example/cohort2025",
-            type="Data Science",
-            start_date=datetime(2025, 1, 1),
-            end_date=datetime(2025, 12, 31)
-        )
-
-        # Adding cohorts to the session
-        db.session.add(cohort1)
-        db.session.add(cohort2)
-        db.session.commit()
-
-        # Creating sample projects with image URLs
-        print('\nADDING PROJECTS..')
-        project1 = Project(
-            name="Project Alpha",
-            description="This is the Alpha project for cohort 2024.",
-            github_url="https://github.com/example/projectalpha",
-            type="Web Development",
-            cohort_id=cohort1.id,
-            created_at=datetime.now(timezone.utc),
-            image_url="https://example.com/images/project_alpha.png",
-            user_id=1,
         
 
+        # Create users
+        print('\nADDING USERS...')
+        admin_created = False  # Flag to track if an admin has been created
+        total_users = 20  # Total number of users to create
 
-        )
+        for _ in range(total_users):
+            username = fake.user_name()
+            email = f"{username.lower()}@example.com"
+            password_hash = bcrypt.generate_password_hash("password123").decode('utf-8')
+    
+            # Ensure at least one admin user is created
+            is_admin = True if not admin_created else random.choice([True, False])
+            if is_admin:
+                admin_created = True  # Mark that an admin has been created
+    
+            # Create the user
+            user = User(
+                username=username,
+                email=email,
+                password_hash=password_hash,
+                is_admin=is_admin,
+                is_verified=True,
+                
+            )
+    
+            # Assign role
+            user.role = "admin" if user.is_admin else "student"
 
-        project2 = Project(
-            name="Project Beta",
-            description="This is the Beta project for cohort 2025.",
-            github_url="https://github.com/example/projectbeta",
-            type="Machine Learning",
-            cohort_id=cohort2.id,
-            created_at=datetime.now(timezone.utc),
-            image_url="https://example.com/images/project_beta.png",
-            user_id=2,
-            
-        )
+            # Generate a verification code for each user
+            user.generate_verification_code()  # Assuming this method sets the code on the user model
+    
+            db.session.add(user)
 
-        # Adding projects to the session
-        db.session.add(project1)
-        db.session.add(project2)
         db.session.commit()
-
-        # Creating sample project members
-        print('\nADDING PROJECT MEMBERS...')
-        project_member1 = ProjectMember(
-            name="Monalisa Sabina",
-            project_id=project1.id,
-            user_id=admin_user.id,  # Assuming admin is part of this project
-            role="Developer",
-            joined_at=datetime.now(timezone.utc),
-            cohort_id=1
-        )
-
-        project_member2 = ProjectMember(
-            name="Vitalis",
-            project_id=project1.id,
-            user_id=student_user.id,
-            role="Developer",
-            joined_at=datetime.now(timezone.utc),
-            cohort_id=1
-        )
-
-        project_member3 = ProjectMember(
-            name="Aggey",
-            project_id=project2.id,
-            user_id=student_user.id,
-            role="Data Scientist",
-            joined_at=datetime.now(timezone.utc) + timedelta(days=1),
-            cohort_id=2
-        )
-
-        # Adding project members to the session
-        db.session.add(project_member1)
-        db.session.add(project_member2)
-        db.session.add(project_member3)
-        db.session.commit()
-
-
-        print('\nTESTING')
-        print('Getting Users')
-        users_list = User.query.all()
-        print(users_list)
-
-        print('\nGetting projects')
-        projects_list = Project.query.all()
-        print(projects_list)
-
-        print('\nGetting cohorts')
-        cohorts_list = Cohort.query.all()
-        print(cohorts_list)
-
-        print('\nGetting project members')
-        project_members_list = ProjectMember.query.all()
-        print(project_members_list)
+ 
       
+        
+        # Create cohorts
+        print('\nADDING COHORTS...')
+        cohorts = []
+        for _ in range(8):
+            cohort_name = fake.company()
+            github_url = f"https://github.com/example/{cohort_name.lower().replace(' ', '-')}"
+            start_date = datetime.now(timezone.utc) - timedelta(days=random.randint(365*2, 365*5))
+            end_date = start_date + timedelta(days=random.randint(365, 365*2))
+            cohort = Cohort(
+                name=cohort_name,
+                description=fake.text(),
+                github_url=github_url,
+                type=fake.random_element(elements=("Full Stack Development", "Data Science")),
+                start_date=start_date,
+                end_date=end_date
+            )
+            db.session.add(cohort)
+            cohorts.append(cohort)
+        db.session.commit()    
+        
+        # Create projects
+        print('\nADDING PROJECTS...')
+        projects =[]
+        project_types = ["Web Development", "Mobile App", "Machine Learning"]
+        
+        for _ in range(25):
+            cohort = random.choice(cohorts)
+            project_name = fake.company()
+            project_description = fake.text()
+            project_type = random.choice(project_types)
+
+            project = Project(
+                name=project_name,
+                description=project_description,
+                github_url=f"https://github.com/example/{cohort.name.lower().replace(' ', '-')}/{project_name.lower().replace(' ', '-')}",
+                type=project_type,
+                cohort_id=cohort.id,
+                created_at=datetime.now(timezone.utc),
+                image_url=f"https://example.com/images/{project_name.lower()}.png",
+                user_id=random.choice([u.id for u in User.query.all()])
+            )
+            db.session.add(project)
+            projects.append(project)
+        db.session.commit()    
+        
+        # Create project members
+        print('\nADDING PROJECT MEMBERS...')
+        users = User.query.all()
+
+        for project in projects:  # Assuming projects is a list of created projects
+           for _ in range(5):  # Add 3 members to each project (adjust number as needed)
+               user = random.choice(users)  # Select a random user from the list of users
+               member_name = fake.name()
+               member_role = fake.job()
+
+               # Create a new project member
+               project_member = ProjectMember(
+                    name=member_name,
+                    project_id=project.id,  # Link to the project
+                    joined_at=datetime.now(timezone.utc),
+                    role=member_role,
+                    user_id=user.id,  # Make sure to assign a valid user_id
+                    cohort_id=random.choice(cohorts).id  # Assign a random cohort if needed
+               )
+
+               db.session.add(project_member)
+
+          # Commit project members to the database
+        db.session.commit()
+    
+
+        # Debugging verification code
+        admin_user = User.query.filter_by(is_admin=True).first()
+        student_user = User.query.filter_by(is_admin=False).first()
+
+        print('\nDebugging user code...')
+        # Check if admin_user exists before trying to access its method
+        if admin_user:
+            print(admin_user.generate_verification_code())
+        else:
+            print("Admin user not found!")
+
+        # Check if student_user exists before trying to access its method
+        if student_user:
+            print(student_user.generate_verification_code())
+        else:
+            print("Student user not found!")
 
         print("\nSeeding completed successfully!")
-
-
-
 
 if __name__ == "__main__":
     seed_data()
