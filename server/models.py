@@ -7,6 +7,10 @@ from datetime import datetime
 from sqlalchemy.exc import IntegrityError
 from flask_mail import Mail, Message
 from sqlalchemy_serializer import SerializerMixin
+from dotenv import load_dotenv
+load_dotenv()
+
+import os
 
 
 db =SQLAlchemy()
@@ -30,7 +34,7 @@ class User(db.Model, SerializerMixin):
     role = db.Column(db.String(20), nullable=False)
 
     # relationship between user"owner" and project
-    projects = db.relationship('Project', back_populates='owner',cascade="all,delete-orphan")
+    projects = db.relationship('Project', back_populates='owner',passive_deletes=True)
     
 
     # Serialization rules: excluding sensitive fields
@@ -91,16 +95,18 @@ class User(db.Model, SerializerMixin):
 
 # Function to send the verification email
 def send_verification_email(recipient_email, code):
-    msg = Message(
-        subject="Your Verification Code",
-        sender="projecttracker@gmail.com",
-        recipients=[recipient_email],
-        body=f"Your verification code is: {code}"
-       )
-    print(f"Sending verification code{code} to {recipient_email}")
-    mail.send(msg)
-    
-    
+
+    try:
+        msg = Message(
+            subject="Your Verification Code",
+            sender=os.getenv('MAIL_USERNAME'),  # Replace with your actual sender email
+            recipients=[recipient_email],
+            body=f"Your verification code is: {code}"
+        )
+        print(f"Sending verification code {code} to {recipient_email}")
+        mail.send(msg)
+    except Exception as e:
+        print(f"Error sending email: {e}")
 
 
 # Project Model
@@ -117,7 +123,7 @@ class Project(db.Model, SerializerMixin):
     
     # Foreign Keys
     user_id=db.Column(db.Integer, db.ForeignKey('users.id'),nullable=False)
-    cohort_id = db.Column(db.Integer, db.ForeignKey('cohorts.id', ondelete='CASCADE'), nullable=False)
+    cohort_id = db.Column(db.Integer, db.ForeignKey('cohorts.id', ondelete='SET NULL'), nullable=True)
 
 
     # Relationships
@@ -204,7 +210,7 @@ class ProjectMember(db.Model, SerializerMixin):
 
     # Foreign key
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'),nullable=False) 
-    cohort_id = db.Column(db.Integer, db.ForeignKey('cohorts.id'), nullable=False)
+    cohort_id = db.Column(db.Integer, db.ForeignKey('cohorts.id'), nullable=True)
 
     # Relationships
     project = db.relationship('Project', back_populates='members') 
