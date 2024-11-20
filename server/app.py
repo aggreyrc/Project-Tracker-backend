@@ -16,8 +16,9 @@ print(os.getenv('MAIL_USERNAME'))
 
 app = Flask(__name__)
 
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///app.db') 
+# app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URI', 'sqlite:///app.db') 
                                     # ☝️ Takes care of both Postgres and sqlite databases
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URI')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 app.json.compact = False
@@ -39,14 +40,6 @@ mail.init_app(app)
 api = Api(app)
 
 
-# Authentication Decorator
-def login_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if 'user_id' not in session:
-            return make_response({"error": "Authentication required"}, 401)
-        return f(*args, **kwargs)
-    return decorated_function
 
 # Home page....................................................................
 class Home(Resource):
@@ -185,7 +178,6 @@ api.add_resource(Verify, '/verify', endpoint='verify')
 # Staying logged in
 class CheckSession(Resource):
     
-    @login_required
     def get(self):
 
         if 'user_id' in session:
@@ -217,10 +209,6 @@ class Login(Resource):
 
             if not user or not user.check_password_hash(password):
                 return {'error':'Invalid credentials'},401
-            
-            # if not user.is_verified:
-            #     return {'error':"User is not verified. Please check you email for the verification code"},400
-            
             session['user_id'] = user.id
             return {'message': 'Logged in successfully'},200
         
@@ -244,7 +232,6 @@ api.add_resource(Logout,'/logout', endpoint='logout')
 class Users(Resource):
 
     # fetching all the users
-    @login_required
     def get(self):
 
         try: 
@@ -301,7 +288,6 @@ api.add_resource(Users, '/users')
 class UserByID(Resource):
 
     # Fetching a user by id
-    @login_required
     def get(self,id):
         user = User.query.filter(User.id == id).first()
 
@@ -311,7 +297,6 @@ class UserByID(Resource):
     
 
     # Updating a user using their id
-    @login_required
     def patch(self,id):
         
         user = User.query.filter(User.id == id).first()
@@ -346,7 +331,6 @@ class UserByID(Resource):
 
 
     # Deleting a user by their ID
-    @login_required
     def delete(self,id):
 
         user =  User.query.filter(User.id == id).first()
@@ -397,7 +381,6 @@ api.add_resource(UserByID, '/users/<int:id>/change-password', endpoint='user_cha
 class Projects(Resource):
     
     # Fetching all projects
-    @login_required
     def get(self):
 
         try:
@@ -808,5 +791,4 @@ class ProjectMemberById(Resource):
 api.add_resource(ProjectMemberById, '/projectmembers/<int:id>')
 port = int(os.environ.get("PORT", 5000))
 if __name__ == '__main__':
-   # port = int(os.environ.get("PORT", 5555))
    app.run(host="0.0.0.0", port=port)

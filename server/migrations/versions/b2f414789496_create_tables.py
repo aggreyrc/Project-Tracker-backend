@@ -1,8 +1,8 @@
-"""Creating tables
+"""create tables
 
-Revision ID: cbd1329d3123
+Revision ID: b2f414789496
 Revises: 
-Create Date: 2024-11-13 04:13:39.587003
+Create Date: 2024-11-20 21:58:37.043104
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'cbd1329d3123'
+revision = 'b2f414789496'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -51,8 +51,8 @@ def upgrade():
     sa.Column('created_at', sa.DateTime(), nullable=True),
     sa.Column('image_url', sa.String(length=255), nullable=True),
     sa.Column('user_id', sa.Integer(), nullable=False),
-    sa.Column('cohort_id', sa.Integer(), nullable=False),
-    sa.ForeignKeyConstraint(['cohort_id'], ['cohorts.id'], ondelete='CASCADE'),
+    sa.Column('cohort_id', sa.Integer(), nullable=True),
+    sa.ForeignKeyConstraint(['cohort_id'], ['cohorts.id'], ondelete='SET NULL'),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
@@ -63,7 +63,7 @@ def upgrade():
     sa.Column('joined_at', sa.DateTime(), nullable=True),
     sa.Column('role', sa.String(length=50), nullable=True),
     sa.Column('user_id', sa.Integer(), nullable=False),
-    sa.Column('cohort_id', sa.Integer(), nullable=False),
+    sa.Column('cohort_id', sa.Integer(), nullable=True),
     sa.ForeignKeyConstraint(['cohort_id'], ['cohorts.id'], ),
     sa.ForeignKeyConstraint(['project_id'], ['projects.id'], ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
